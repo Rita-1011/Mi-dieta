@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Diet - Nutrition Planner</title>
-    <meta name="description" content="Organize meals, plan nutrition, calculate macros, and receive AI-powered food substitution suggestions.">
+    <title>Mi Organizador de Dieta</title>
+    <meta name="description" content="Organiza tu dieta semanal, importa planes de alimentación en cualquier idioma y genera listas de compra.">
     <meta property="og:image" content="https://bolt.new/static/og_default.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
@@ -16,42 +16,42 @@
       <div id="auth-modal" class="auth-modal">
         <div class="auth-container">
           <div class="auth-header">
-            <h1>My Diet</h1>
-            <p class="auth-subtitle">Your personal nutrition planner</p>
+            <h1>Mi Organizador de Dieta</h1>
+            <p class="auth-subtitle">Tu planificador de alimentación personal</p>
           </div>
 
           <!-- Login Form -->
           <form id="login-form" class="auth-form active">
-            <h2>Welcome Back</h2>
+            <h2>Bienvenido de Nuevo</h2>
             <div class="form-group">
-              <label for="login-email">Email</label>
-              <input type="email" id="login-email" placeholder="Enter your email" required>
+              <label for="login-email">Correo Electrónico</label>
+              <input type="email" id="login-email" placeholder="Introduce tu correo" required>
             </div>
             <div class="form-group">
-              <label for="login-password">Password</label>
-              <input type="password" id="login-password" placeholder="Enter your password" required>
+              <label for="login-password">Contraseña</label>
+              <input type="password" id="login-password" placeholder="Introduce tu contraseña" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-            <p class="auth-switch">Don't have an account? <a href="#" id="show-register">Create one</a></p>
+            <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
+            <p class="auth-switch">¿No tienes una cuenta? <a href="#" id="show-register">Crear una</a></p>
           </form>
 
           <!-- Register Form -->
           <form id="register-form" class="auth-form">
-            <h2>Create Account</h2>
+            <h2>Crear Cuenta</h2>
             <div class="form-group">
-              <label for="register-name">Full Name</label>
-              <input type="text" id="register-name" placeholder="Enter your name" required>
+              <label for="register-name">Nombre Completo</label>
+              <input type="text" id="register-name" placeholder="Introduce tu nombre" required>
             </div>
             <div class="form-group">
-              <label for="register-email">Email</label>
-              <input type="email" id="register-email" placeholder="Enter your email" required>
+              <label for="register-email">Correo Electrónico</label>
+              <input type="email" id="register-email" placeholder="Introduce tu correo" required>
             </div>
             <div class="form-group">
-              <label for="register-password">Password</label>
-              <input type="password" id="register-password" placeholder="Create a password (min 6 characters)" required minlength="6">
+              <label for="register-password">Contraseña</label>
+              <input type="password" id="register-password" placeholder="Crea una contraseña (mínimo 6 caracteres)" required minlength="6">
             </div>
-            <button type="submit" class="btn btn-primary btn-full">Create Account</button>
-            <p class="auth-switch">Already have an account? <a href="#" id="show-login">Sign in</a></p>
+            <button type="submit" class="btn btn-primary btn-full">Crear Cuenta</button>
+            <p class="auth-switch">¿Ya tienes una cuenta? <a href="#" id="show-login">Iniciar sesión</a></p>
           </form>
         </div>
       </div>
@@ -62,11 +62,11 @@
         <nav class="navbar">
           <div class="nav-brand">
             <span class="nav-logo">🥗</span>
-            <span class="nav-title">My Diet</span>
+            <span class="nav-title">Mi Organizador de Dieta</span>
           </div>
           <div class="nav-user">
             <span id="user-name" class="user-greeting"></span>
-            <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+            <button id="logout-btn" class="btn btn-outline btn-sm">Cerrar Sesión</button>
           </div>
         </nav>
 
@@ -74,19 +74,19 @@
         <nav class="desktop-nav">
           <button class="desktop-nav-item active" data-section="diet">
             <span class="nav-icon">🥗</span>
-            <span class="nav-label" id="nav-label-diet-desktop">My Diet</span>
+            <span class="nav-label" id="nav-label-diet-desktop">Mi Dieta</span>
           </button>
           <button class="desktop-nav-item" data-section="import">
             <span class="nav-icon">📥</span>
-            <span class="nav-label" id="nav-label-import-desktop">Import Diet</span>
+            <span class="nav-label" id="nav-label-import-desktop">Importar Dieta</span>
           </button>
           <button class="desktop-nav-item" data-section="shopping">
             <span class="nav-icon">🛒</span>
-            <span class="nav-label" id="nav-label-shopping-desktop">Shopping List</span>
+            <span class="nav-label" id="nav-label-shopping-desktop">Lista de la Compra</span>
           </button>
           <button class="desktop-nav-item" data-section="assistant">
             <span class="nav-icon">🤖</span>
-            <span class="nav-label" id="nav-label-assistant-desktop">AI Assistant</span>
+            <span class="nav-label" id="nav-label-assistant-desktop">Asistente IA</span>
           </button>
         </nav>
 
@@ -94,58 +94,53 @@
         <nav class="mobile-nav">
           <button class="mobile-nav-item active" data-section="diet">
             <span class="nav-icon">🥗</span>
-            <span class="nav-label" id="nav-label-diet-mobile">My Diet</span>
+            <span class="nav-label" id="nav-label-diet-mobile">Mi Dieta</span>
           </button>
           <button class="mobile-nav-item" data-section="import">
             <span class="nav-icon">📥</span>
-            <span class="nav-label" id="nav-label-import-mobile">Import</span>
+            <span class="nav-label" id="nav-label-import-mobile">Importar</span>
           </button>
           <button class="mobile-nav-item" data-section="shopping">
             <span class="nav-icon">🛒</span>
-            <span class="nav-label" id="nav-label-shopping-mobile">Shopping</span>
+            <span class="nav-label" id="nav-label-shopping-mobile">Compra</span>
           </button>
           <button class="mobile-nav-item" data-section="assistant">
             <span class="nav-icon">🤖</span>
-            <span class="nav-label" id="nav-label-assistant-mobile">AI</span>
+            <span class="nav-label" id="nav-label-assistant-mobile">IA</span>
           </button>
         </nav>
 
         <!-- Main Content -->
         <main class="main-content">
-          <!-- Mi Dieta Section (main screen) -->
+          <!-- Mi Dieta Section -->
           <section id="diet-section" class="section active">
             <div class="section-header">
-              <h2 id="diet-section-title">My Diet</h2>
+              <h2 id="diet-section-title">Mi Dieta</h2>
               <p class="section-subtitle" id="current-date"></p>
             </div>
 
-            <!-- Empty state (shown when no diet) -->
+            <!-- Empty state -->
             <div id="diet-empty" class="diet-empty">
               <div class="empty-icon">🥗</div>
-              <h3 id="diet-empty-title">Welcome!</h3>
-              <p id="diet-empty-line1">You don't have any diet planned yet.</p>
-              <p id="diet-empty-line2">Import your weekly meal plan to get started.</p>
+              <h3 id="diet-empty-title">¡Bienvenido!</h3>
+              <p id="diet-empty-line1">Aún no tienes ninguna dieta planificada.</p>
+              <p id="diet-empty-line2">Importa tu plan de alimentación semanal para empezar.</p>
               <button class="btn btn-primary btn-lg" id="diet-empty-import-btn">
-                <span>📥</span> Import Diet
+                <span>📥</span> Importar Dieta
               </button>
             </div>
 
-            <!-- Diet view (shown when diet exists) -->
+            <!-- Diet view -->
             <div id="diet-view" class="diet-view hidden">
               <div class="diet-view-header">
                 <div class="diet-view-info">
-                  <span class="diet-view-name" id="diet-view-name">My Diet</span>
-                  <span class="diet-view-meta" id="diet-view-meta">0 meals this week</span>
-                </div>
-                <div class="diet-view-actions">
-                  <button class="btn btn-secondary btn-sm" id="diet-add-meal-btn">
-                    <span>+</span> Add Meal
-                  </button>
+                  <span class="diet-view-name" id="diet-view-name">Mi Dieta</span>
+                  <span class="diet-view-meta" id="diet-view-meta">0 comidas esta semana</span>
                 </div>
               </div>
 
               <div class="diet-days-grid" id="diet-days-grid">
-                <!-- Days generated by JS -->
+                <!-- Días generados por JS -->
               </div>
             </div>
           </section>
@@ -153,45 +148,45 @@
           <!-- Shopping List Section -->
           <section id="shopping-section" class="section">
             <div class="section-header">
-              <h2 id="shopping-title">Shopping List</h2>
+              <h2 id="shopping-title">Lista de la Compra</h2>
               <div class="header-actions">
-                <button id="generate-list-btn" class="btn btn-primary">Generate from meals</button>
-                <button id="add-item-btn" class="btn btn-secondary">+ Add</button>
+                <button id="generate-list-btn" class="btn btn-primary">Generar desde comidas</button>
+                <button id="add-item-btn" class="btn btn-secondary">+ Añadir</button>
               </div>
             </div>
 
             <div class="shopping-filters">
-              <button class="filter-btn active" data-filter="all" id="filter-all">All</button>
-              <button class="filter-btn" data-filter="pending" id="filter-pending">Pending</button>
-              <button class="filter-btn" data-filter="completed" id="filter-completed">Completed</button>
+              <button class="filter-btn active" data-filter="all" id="filter-all">Todas</button>
+              <button class="filter-btn" data-filter="pending" id="filter-pending">Pendientes</button>
+              <button class="filter-btn" data-filter="completed" id="filter-completed">Completadas</button>
             </div>
 
             <div class="shopping-list" id="shopping-list">
-              <p class="empty-state" id="shopping-empty">Your shopping list is empty. Generate from meals or add items manually.</p>
+              <p class="empty-state" id="shopping-empty">Tu lista de la compra está vacía. Genera desde las comidas o añade artículos manualmente.</p>
             </div>
           </section>
 
           <!-- AI Assistant Section -->
           <section id="assistant-section" class="section">
             <div class="section-header">
-              <h2>AI Food Substitute</h2>
-              <p class="section-subtitle">Get smart ingredient alternatives</p>
+              <h2>Asistente de Sustitutos de Alimentos</h2>
+              <p class="section-subtitle">Obtén alternativas inteligentes para ingredientes</p>
             </div>
 
             <div class="assistant-container">
               <div class="search-card card">
                 <div class="card-body">
                   <div class="search-box">
-                    <input type="text" id="ingredient-input" placeholder="Enter an ingredient (e.g., butter, sugar, milk)">
-                    <button id="search-substitute-btn" class="btn btn-primary">Find Alternatives</button>
+                    <input type="text" id="ingredient-input" placeholder="Introduce un ingrediente (ej. mantequilla, azúcar, leche)">
+                    <button id="search-substitute-btn" class="btn btn-primary">Buscar Alternativas</button>
                   </div>
                   <div class="quick-suggestions">
-                    <span class="suggestion-label">Popular:</span>
-                    <button class="suggestion-chip" data-ingredient="butter">Butter</button>
-                    <button class="suggestion-chip" data-ingredient="sugar">Sugar</button>
-                    <button class="suggestion-chip" data-ingredient="milk">Milk</button>
-                    <button class="suggestion-chip" data-ingredient="eggs">Eggs</button>
-                    <button class="suggestion-chip" data-ingredient="flour">Flour</button>
+                    <span class="suggestion-label">Populares:</span>
+                    <button class="suggestion-chip" data-ingredient="mantequilla">Mantequilla</button>
+                    <button class="suggestion-chip" data-ingredient="azúcar">Azúcar</button>
+                    <button class="suggestion-chip" data-ingredient="leche">Leche</button>
+                    <button class="suggestion-chip" data-ingredient="huevos">Huevos</button>
+                    <button class="suggestion-chip" data-ingredient="harina">Harina</button>
                   </div>
                 </div>
               </div>
@@ -201,13 +196,13 @@
                   <h3 id="substitute-title"></h3>
                 </div>
                 <div id="substitutes-list" class="substitutes-grid">
-                  <!-- Substitutes will be populated here -->
+                  <!-- Alternativas se llenan aquí -->
                 </div>
               </div>
 
               <div id="assistant-placeholder" class="placeholder">
                 <span class="placeholder-icon">🤖</span>
-                <p>Enter an ingredient to discover healthy alternatives powered by AI</p>
+                <p>Introduce un ingrediente para descubrir alternativas saludables impulsadas por IA</p>
               </div>
             </div>
           </section>
@@ -215,78 +210,68 @@
           <!-- Import Diet Section -->
           <section id="import-section" class="section">
             <div class="section-header">
-              <h2>Import Diet Plan</h2>
-              <p class="section-subtitle">Paste your weekly diet plan in any language to import meals automatically</p>
+              <h2>Importar Plan de Dieta</h2>
+              <p class="section-subtitle">Pega tu plan semanal en cualquier idioma para importar comidas automáticamente</p>
             </div>
 
             <div class="import-container">
               <div class="import-input card">
                 <div class="card-header">
-                  <h3>Paste Your Diet Plan</h3>
+                  <h3>Pega tu Plan de Dieta</h3>
                   <span id="detected-language" class="lang-badge hidden"></span>
                 </div>
                 <div class="card-body">
                   <div class="form-group">
-                    <label for="diet-text">Enter your diet plan as plain text</label>
-                    <textarea id="diet-text" rows="12" placeholder="Supports English, Spanish, Portuguese, French, German, Italian, and Dutch
+                    <label for="diet-text">Introduce tu plan como texto plano</label>
+                    <textarea id="diet-text" rows="12" placeholder="Soporta inglés, español, portugués, francés, alemán, italiano y neerlandés
 
-Example (English):
-Monday:
-Breakfast: Oatmeal with berries - 350 kcal
-Lunch: Grilled chicken salad - 450 kcal
-Dinner: Salmon with vegetables - 500 kcal
-Snack: Greek yogurt - 150 kcal
-
-Example (Spanish):
+Ejemplo (Español):
 Lunes:
-Desayuno: Avena con frutas - 350 kcal
-Media mañana: Yogur natural
-Almuerzo: Ensalada de pollo - 450 kcal
-Merienda: Frutos secos
-Cena: Salmón con verduras - 500 kcal
+Desayuno: Avena con frutas
+Almuerzo: Ensalada de pollo a la plancha
+Cena: Salmón con verduras al horno
+Colación: Yogur griego
 
-Example (Portuguese):
+Ejemplo (Portugués):
 Segunda-feira:
-Café da manhã: Aveia com frutas - 350 kcal
-Almoço: Salada de frango - 450 kcal
-Jantar: Salmão com legumes - 500 kcal"></textarea>
+Café da manhã: Aveia com frutas
+Almoço: Salada de frango
+Jantar: Salmão com legumes"></textarea>
                   </div>
                   <div class="import-format-help">
                     <button type="button" class="help-toggle-btn" id="format-help-toggle">
-                      <span>💡</span> Supported formats and languages
+                      <span>💡</span> Formatos e idiomas soportados
                     </button>
                     <div id="format-help" class="format-help hidden">
                       <div class="help-content">
-                        <p><strong>Supported languages:</strong> English, Spanish, Portuguese, French, German, Italian, Dutch</p>
-                        <p><strong>The parser auto-detects language from keywords.</strong></p>
+                        <p><strong>Idiomas soportados:</strong> Inglés, Español, Portugués, Francés, Alemán, Italiano, Neerlandés</p>
+                        <p><strong>El analizador detecta automáticamente el idioma.</strong></p>
                         <ul>
-                          <li><strong>Day names:</strong> Monday/Lunes/Lundi, Tuesday/Martes/Mardi, etc.</li>
-                          <li><strong>Meal types:</strong></li>
-                          <li>Breakfast / Desayuno / Café da manhã / Petit déjeuner</li>
-                          <li>Morning Snack / Media mañana / Lanche da manhã</li>
-                          <li>Lunch / Almuerzo / Almoço / Déjeuner / Mittagessen</li>
-                          <li>Afternoon Snack / Merienda / Lanche da tarde / Goûter</li>
-                          <li>Dinner / Cena / Jantar / Dîner / Abendessen</li>
-                          <li>Snack / Colación / Lanche / Collation</li>
-                          <li><strong>Calories:</strong> 350 kcal, 350 cal, 350 calorías, 350 calorias</li>
-                          <li><strong>Macros:</strong> proteína: 30g, carbohidratos: 45g, grasa: 15g</li>
-                          <li><strong>Ingredients:</strong> ingredientes: chicken, rice, vegetables</li>
+                          <li><strong>Nombres de días:</strong> Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo</li>
+                          <li><strong>Tipos de comida:</strong></li>
+                          <li>Desayuno / Café da manhã / Petit déjeuner</li>
+                          <li>Media mañana / Lanche da manhã</li>
+                          <li>Almuerzo / Almoço / Déjeuner</li>
+                          <li>Merienda / Lanche da tarde / Goûter</li>
+                          <li>Cena / Jantar / Dîner</li>
+                          <li>Colación / Lanche / Collation</li>
+                          <li><strong>Ingredientes:</strong> ingredientes: pollo, arroz, verduras</li>
                         </ul>
                         <p class="help-example">
-                          <strong>Spanish example:</strong><br>
+                          <strong>Ejemplo en español:</strong><br>
                           Lunes:<br>
-                          Desayuno: Avena con frutas - 350 kcal<br>
+                          Desayuno: Avena con frutas<br>
                           Media mañana: Yogur natural<br>
-                          Almuerzo: Pollo a la plancha con ensalada - 450 kcal<br>
+                          Almuerzo: Pollo a la plancha con ensalada<br>
                           Merienda: Frutos secos<br>
-                          Cena: Salmón con verduras al horno - 500 kcal
+                          Cena: Salmón con verduras al horno
                         </p>
                       </div>
                     </div>
                   </div>
                   <div class="import-actions">
-                    <button type="button" id="parse-diet-btn" class="btn btn-primary">Parse Diet Plan</button>
-                    <button type="button" id="clear-diet-btn" class="btn btn-secondary">Clear</button>
+                    <button type="button" id="parse-diet-btn" class="btn btn-primary">Analizar Plan de Dieta</button>
+                    <button type="button" id="clear-diet-btn" class="btn btn-secondary">Limpiar</button>
                   </div>
                 </div>
               </div>
@@ -295,83 +280,30 @@ Jantar: Salmão com legumes - 500 kcal"></textarea>
 
               <div id="import-preview" class="import-preview hidden">
                 <div class="preview-header">
-                  <h3>Preview Parsed Meals</h3>
+                  <h3>Vista Previa de Comidas Analizadas</h3>
                   <span id="meals-count" class="meals-count"></span>
                 </div>
                 <div id="preview-content" class="preview-content">
-                  <!-- Preview will be populated here -->
+                  <!-- Vista previa se llena aquí -->
                 </div>
                 <div class="preview-actions">
                   <button type="button" id="import-meals-btn" class="btn btn-primary" disabled>
-                    <span>📥</span> Import Meals
+                    <span>📥</span> Importar Comidas
                   </button>
                   <button type="button" id="import-shopping-btn" class="btn btn-secondary" disabled>
-                    <span>🛒</span> Import + Shopping List
+                    <span>🛒</span> Importar + Lista de Compra
                   </button>
-                  <button type="button" id="cancel-import-btn" class="btn btn-outline">Cancel</button>
+                  <button type="button" id="cancel-import-btn" class="btn btn-outline">Cancelar</button>
                 </div>
               </div>
 
               <div id="import-placeholder" class="placeholder">
                 <span class="placeholder-icon">📥</span>
-                <p>Paste your weekly diet plan above and click "Parse Diet Plan" to preview meals before importing</p>
+                <p>Pega tu plan de dieta semanal arriba y haz clic en "Analizar Plan de Dieta" para previsualizar las comidas antes de importar</p>
               </div>
             </div>
           </section>
         </main>
-      </div>
-
-      <!-- Add Meal Modal -->
-      <div id="meal-modal" class="modal hidden">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3 id="meal-modal-title">Add Meal</h3>
-            <button class="modal-close">&times;</button>
-          </div>
-          <form id="meal-form" class="modal-body">
-            <input type="hidden" id="meal-id">
-            <div class="form-group">
-              <label for="meal-name">Meal Name</label>
-              <input type="text" id="meal-name" placeholder="e.g., Grilled Chicken Salad" required>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="meal-day">Day</label>
-                <select id="meal-day" required>
-                  <option value="monday">Monday</option>
-                  <option value="tuesday">Tuesday</option>
-                  <option value="wednesday">Wednesday</option>
-                  <option value="thursday">Thursday</option>
-                  <option value="friday">Friday</option>
-                  <option value="saturday">Saturday</option>
-                  <option value="sunday">Sunday</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="meal-type">Meal Type</label>
-                <select id="meal-type" required>
-                  <option value="breakfast">Breakfast</option>
-                  <option value="lunch">Lunch</option>
-                  <option value="dinner">Dinner</option>
-                  <option value="snack">Snack</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="meal-description">Description (optional)</label>
-              <textarea id="meal-description" placeholder="Brief description of the meal"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="meal-ingredients">Ingredients (comma separated)</label>
-              <input type="text" id="meal-ingredients" placeholder="e.g., chicken, lettuce, tomato, olive oil">
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Meal</button>
-            </div>
-          </form>
-        </div>
       </div>
 
       <!-- Add Shopping Item Modal -->
@@ -379,21 +311,21 @@ Jantar: Salmão com legumes - 500 kcal"></textarea>
         <div class="modal-overlay"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h3>Add Shopping Item</h3>
+            <h3>Añadir Artículo de Compra</h3>
             <button class="modal-close">&times;</button>
           </div>
           <form id="item-form" class="modal-body">
             <div class="form-group">
-              <label for="item-name">Item Name</label>
-              <input type="text" id="item-name" placeholder="e.g., Organic Apples" required>
+              <label for="item-name">Nombre del Artículo</label>
+              <input type="text" id="item-name" placeholder="Ej. Manzanas Orgánicas" required>
             </div>
             <div class="form-group">
-              <label for="item-quantity">Quantity</label>
-              <input type="text" id="item-quantity" placeholder="e.g., 2 lbs, 500g, 1 dozen" value="1">
+              <label for="item-quantity">Cantidad</label>
+              <input type="text" id="item-quantity" placeholder="Ej. 2 kg, 500g, 1 docena" value="1">
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
-              <button type="submit" class="btn btn-primary">Add Item</button>
+              <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Añadir Artículo</button>
             </div>
           </form>
         </div>
