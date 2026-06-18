@@ -74,19 +74,19 @@
         <nav class="desktop-nav">
           <button class="desktop-nav-item active" data-section="diet">
             <span class="nav-icon">🥗</span>
-            <span class="nav-label">Mi Dieta</span>
+            <span class="nav-label" id="nav-label-diet-desktop">My Diet</span>
           </button>
           <button class="desktop-nav-item" data-section="import">
             <span class="nav-icon">📥</span>
-            <span class="nav-label">Importar Dieta</span>
+            <span class="nav-label" id="nav-label-import-desktop">Import Diet</span>
           </button>
           <button class="desktop-nav-item" data-section="shopping">
             <span class="nav-icon">🛒</span>
-            <span class="nav-label">Lista de la Compra</span>
+            <span class="nav-label" id="nav-label-shopping-desktop">Shopping List</span>
           </button>
           <button class="desktop-nav-item" data-section="assistant">
             <span class="nav-icon">🤖</span>
-            <span class="nav-label">Asistente IA</span>
+            <span class="nav-label" id="nav-label-assistant-desktop">AI Assistant</span>
           </button>
         </nav>
 
@@ -94,19 +94,19 @@
         <nav class="mobile-nav">
           <button class="mobile-nav-item active" data-section="diet">
             <span class="nav-icon">🥗</span>
-            <span class="nav-label">Mi Dieta</span>
+            <span class="nav-label" id="nav-label-diet-mobile">My Diet</span>
           </button>
           <button class="mobile-nav-item" data-section="import">
             <span class="nav-icon">📥</span>
-            <span class="nav-label">Importar</span>
+            <span class="nav-label" id="nav-label-import-mobile">Import</span>
           </button>
           <button class="mobile-nav-item" data-section="shopping">
             <span class="nav-icon">🛒</span>
-            <span class="nav-label">Compra</span>
+            <span class="nav-label" id="nav-label-shopping-mobile">Shopping</span>
           </button>
           <button class="mobile-nav-item" data-section="assistant">
             <span class="nav-icon">🤖</span>
-            <span class="nav-label">IA</span>
+            <span class="nav-label" id="nav-label-assistant-mobile">AI</span>
           </button>
         </nav>
 
@@ -115,18 +115,18 @@
           <!-- Mi Dieta Section (main screen) -->
           <section id="diet-section" class="section active">
             <div class="section-header">
-              <h2>Mi Dieta</h2>
+              <h2 id="diet-section-title">My Diet</h2>
               <p class="section-subtitle" id="current-date"></p>
             </div>
 
             <!-- Empty state (shown when no diet) -->
             <div id="diet-empty" class="diet-empty">
               <div class="empty-icon">🥗</div>
-              <h3>¡Bienvenido!</h3>
-              <p>No tienes ninguna dieta planificada todavia.</p>
-              <p>Importa tu plan de alimentacion semanal para empezar.</p>
+              <h3 id="diet-empty-title">Welcome!</h3>
+              <p id="diet-empty-line1">You don't have any diet planned yet.</p>
+              <p id="diet-empty-line2">Import your weekly meal plan to get started.</p>
               <button class="btn btn-primary btn-lg" id="diet-empty-import-btn">
-                <span>📥</span> Importar Dieta
+                <span>📥</span> Import Diet
               </button>
             </div>
 
@@ -134,12 +134,12 @@
             <div id="diet-view" class="diet-view hidden">
               <div class="diet-view-header">
                 <div class="diet-view-info">
-                  <span class="diet-view-name">Mi Dieta</span>
-                  <span class="diet-view-meta" id="diet-view-meta">0 comidas esta semana</span>
+                  <span class="diet-view-name" id="diet-view-name">My Diet</span>
+                  <span class="diet-view-meta" id="diet-view-meta">0 meals this week</span>
                 </div>
                 <div class="diet-view-actions">
                   <button class="btn btn-secondary btn-sm" id="diet-add-meal-btn">
-                    <span>+</span> Anadir comida
+                    <span>+</span> Add Meal
                   </button>
                 </div>
               </div>
@@ -153,21 +153,21 @@
           <!-- Shopping List Section -->
           <section id="shopping-section" class="section">
             <div class="section-header">
-              <h2>Lista de la Compra</h2>
+              <h2 id="shopping-title">Shopping List</h2>
               <div class="header-actions">
-                <button id="generate-list-btn" class="btn btn-primary">Generar de comidas</button>
-                <button id="add-item-btn" class="btn btn-secondary">+ Anadir</button>
+                <button id="generate-list-btn" class="btn btn-primary">Generate from meals</button>
+                <button id="add-item-btn" class="btn btn-secondary">+ Add</button>
               </div>
             </div>
 
             <div class="shopping-filters">
-              <button class="filter-btn active" data-filter="all">Todas</button>
-              <button class="filter-btn" data-filter="pending">Pendientes</button>
-              <button class="filter-btn" data-filter="completed">Completadas</button>
+              <button class="filter-btn active" data-filter="all" id="filter-all">All</button>
+              <button class="filter-btn" data-filter="pending" id="filter-pending">Pending</button>
+              <button class="filter-btn" data-filter="completed" id="filter-completed">Completed</button>
             </div>
 
             <div class="shopping-list" id="shopping-list">
-              <p class="empty-state">Tu lista de la compra esta vacia. Genera desde las comidas o anade items manualmente.</p>
+              <p class="empty-state" id="shopping-empty">Your shopping list is empty. Generate from meals or add items manually.</p>
             </div>
           </section>
 

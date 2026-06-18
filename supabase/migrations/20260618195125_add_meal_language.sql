@@ -1,0 +1,1 @@
+ALTER TABLE meals ADD COLUMN language TEXT DEFAULT 'en';

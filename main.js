@@ -23,6 +23,229 @@ let shoppingItems = [];
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
 
+let currentLanguage = 'en';
+
+const DAY_LABELS = {
+  en: { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday' },
+  es: { monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo' },
+  pt: { monday: 'Segunda-feira', tuesday: 'Terça-feira', wednesday: 'Quarta-feira', thursday: 'Quinta-feira', friday: 'Sexta-feira', saturday: 'Sábado', sunday: 'Domingo' },
+  fr: { monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi', thursday: 'Jeudi', friday: 'Vendredi', saturday: 'Samedi', sunday: 'Dimanche' },
+  de: { monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch', thursday: 'Donnerstag', friday: 'Freitag', saturday: 'Samstag', sunday: 'Sonntag' },
+  it: { monday: 'Lunedì', tuesday: 'Martedì', wednesday: 'Mercoledì', thursday: 'Giovedì', friday: 'Venerdì', saturday: 'Sabato', sunday: 'Domenica' },
+  nl: { monday: 'Maandag', tuesday: 'Dinsdag', wednesday: 'Woensdag', thursday: 'Donderdag', friday: 'Vrijdag', saturday: 'Zaterdag', sunday: 'Zondag' }
+};
+
+const MEAL_TYPE_LABELS = {
+  en: { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' },
+  es: { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Colación' },
+  pt: { breakfast: 'Café da manhã', lunch: 'Almoço', dinner: 'Jantar', snack: 'Lanche' },
+  fr: { breakfast: 'Petit déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' },
+  de: { breakfast: 'Frühstück', lunch: 'Mittagessen', dinner: 'Abendessen', snack: 'Snack' },
+  it: { breakfast: 'Colazione', lunch: 'Pranzo', dinner: 'Cena', snack: 'Spuntino' },
+  nl: { breakfast: 'Ontbijt', lunch: 'Lunch', dinner: 'Diner', snack: 'Snack' }
+};
+
+function getLanguage() {
+  return currentLanguage;
+}
+
+const UI_LABELS = {
+  en: {
+    dietSectionTitle: 'My Diet',
+    dietViewName: 'My Diet',
+    shoppingTitle: 'Shopping List',
+    emptyTitle: 'Welcome!',
+    emptyLine1: "You don't have any diet planned yet.",
+    emptyLine2: 'Import your weekly meal plan to get started.',
+    emptyButton: 'Import Diet',
+    addMeal: 'Add Meal',
+    addItem: 'Add',
+    generateList: 'Generate from meals',
+    filterAll: 'All',
+    filterPending: 'Pending',
+    filterCompleted: 'Completed',
+    shoppingEmpty: 'Your shopping list is empty. Generate from meals or add items manually.',
+    navDiet: 'My Diet',
+    navImport: 'Import Diet',
+    navShopping: 'Shopping List',
+    navAssistant: 'AI Assistant',
+    navImportMobile: 'Import',
+    navShoppingMobile: 'Shopping',
+    navAssistantMobile: 'AI'
+  },
+  es: {
+    dietSectionTitle: 'Mi Dieta',
+    dietViewName: 'Mi Dieta',
+    shoppingTitle: 'Lista de la Compra',
+    emptyTitle: '¡Bienvenido!',
+    emptyLine1: 'No tienes ninguna dieta planificada todavía.',
+    emptyLine2: 'Importa tu plan de alimentación semanal para empezar.',
+    emptyButton: 'Importar Dieta',
+    addMeal: 'Añadir comida',
+    addItem: 'Añadir',
+    generateList: 'Generar de comidas',
+    filterAll: 'Todas',
+    filterPending: 'Pendientes',
+    filterCompleted: 'Completadas',
+    shoppingEmpty: 'Tu lista de la compra está vacía. Genera desde las comidas o añade items manualmente.',
+    navDiet: 'Mi Dieta',
+    navImport: 'Importar Dieta',
+    navShopping: 'Lista de la Compra',
+    navAssistant: 'Asistente IA',
+    navImportMobile: 'Importar',
+    navShoppingMobile: 'Compra',
+    navAssistantMobile: 'IA'
+  },
+  pt: {
+    dietSectionTitle: 'Minha Dieta',
+    dietViewName: 'Minha Dieta',
+    shoppingTitle: 'Lista de Compras',
+    emptyTitle: 'Bem-vindo!',
+    emptyLine1: 'Você ainda não tem nenhuma dieta planejada.',
+    emptyLine2: 'Importe seu plano alimentar semanal para começar.',
+    emptyButton: 'Importar Dieta',
+    addMeal: 'Adicionar refeição',
+    addItem: 'Adicionar',
+    generateList: 'Gerar de refeições',
+    filterAll: 'Todas',
+    filterPending: 'Pendentes',
+    filterCompleted: 'Concluídas',
+    shoppingEmpty: 'Sua lista de compras está vazia. Gere a partir das refeições ou adicione itens manualmente.',
+    navDiet: 'Minha Dieta',
+    navImport: 'Importar Dieta',
+    navShopping: 'Lista de Compras',
+    navAssistant: 'Assistente IA',
+    navImportMobile: 'Importar',
+    navShoppingMobile: 'Compras',
+    navAssistantMobile: 'IA'
+  },
+  fr: {
+    dietSectionTitle: 'Mon Régime',
+    dietViewName: 'Mon Régime',
+    shoppingTitle: 'Liste de Courses',
+    emptyTitle: 'Bienvenue !',
+    emptyLine1: "Vous n'avez pas encore de régime planifié.",
+    emptyLine2: 'Importez votre plan alimentaire hebdomadaire pour commencer.',
+    emptyButton: 'Importer un Régime',
+    addMeal: 'Ajouter un repas',
+    addItem: 'Ajouter',
+    generateList: 'Générer depuis les repas',
+    filterAll: 'Toutes',
+    filterPending: 'En attente',
+    filterCompleted: 'Terminées',
+    shoppingEmpty: 'Votre liste de courses est vide. Générez-la depuis les repas ou ajoutez des articles manuellement.',
+    navDiet: 'Mon Régime',
+    navImport: 'Importer un Régime',
+    navShopping: 'Liste de Courses',
+    navAssistant: 'Assistant IA',
+    navImportMobile: 'Importer',
+    navShoppingMobile: 'Courses',
+    navAssistantMobile: 'IA'
+  },
+  de: {
+    dietSectionTitle: 'Meine Diät',
+    dietViewName: 'Meine Diät',
+    shoppingTitle: 'Einkaufsliste',
+    emptyTitle: 'Willkommen!',
+    emptyLine1: 'Sie haben noch keine Diät geplant.',
+    emptyLine2: 'Importieren Sie Ihren wöchentlichen Ernährungsplan, um zu beginnen.',
+    emptyButton: 'Diät importieren',
+    addMeal: 'Mahlzeit hinzufügen',
+    addItem: 'Hinzufügen',
+    generateList: 'Aus Mahlzeiten generieren',
+    filterAll: 'Alle',
+    filterPending: 'Ausstehend',
+    filterCompleted: 'Abgeschlossen',
+    shoppingEmpty: 'Ihre Einkaufsliste ist leer. Generieren Sie sie aus Mahlzeiten oder fügen Sie Artikel manuell hinzu.',
+    navDiet: 'Meine Diät',
+    navImport: 'Diät importieren',
+    navShopping: 'Einkaufsliste',
+    navAssistant: 'KI-Assistent',
+    navImportMobile: 'Importieren',
+    navShoppingMobile: 'Einkauf',
+    navAssistantMobile: 'KI'
+  },
+  it: {
+    dietSectionTitle: 'La Mia Dieta',
+    dietViewName: 'La Mia Dieta',
+    shoppingTitle: 'Lista della Spesa',
+    emptyTitle: 'Benvenuto!',
+    emptyLine1: 'Non hai ancora nessuna dieta pianificata.',
+    emptyLine2: 'Importa il tuo piano alimentare settimanale per iniziare.',
+    emptyButton: 'Importa Dieta',
+    addMeal: 'Aggiungi pasto',
+    addItem: 'Aggiungi',
+    generateList: 'Genera dai pasti',
+    filterAll: 'Tutte',
+    filterPending: 'In attesa',
+    filterCompleted: 'Completate',
+    shoppingEmpty: 'La tua lista della spesa è vuota. Generala dai pasti o aggiungi articoli manualmente.',
+    navDiet: 'La Mia Dieta',
+    navImport: 'Importa Dieta',
+    navShopping: 'Lista della Spesa',
+    navAssistant: 'Assistente IA',
+    navImportMobile: 'Importa',
+    navShoppingMobile: 'Spesa',
+    navAssistantMobile: 'IA'
+  },
+  nl: {
+    dietSectionTitle: 'Mijn Dieet',
+    dietViewName: 'Mijn Dieet',
+    shoppingTitle: 'Boodschappenlijst',
+    emptyTitle: 'Welkom!',
+    emptyLine1: 'Je hebt nog geen dieet gepland.',
+    emptyLine2: 'Importeer je wekelijkse voedingsplan om te beginnen.',
+    emptyButton: 'Dieet importeren',
+    addMeal: 'Maaltijd toevoegen',
+    addItem: 'Toevoegen',
+    generateList: 'Genereren van maaltijden',
+    filterAll: 'Alle',
+    filterPending: 'In behandeling',
+    filterCompleted: 'Voltooid',
+    shoppingEmpty: 'Je boodschappenlijst is leeg. Genereer vanuit maaltijden of voeg items handmatig toe.',
+    navDiet: 'Mijn Dieet',
+    navImport: 'Dieet importeren',
+    navShopping: 'Boodschappenlijst',
+    navAssistant: 'AI-assistent',
+    navImportMobile: 'Importeren',
+    navShoppingMobile: 'Boodschappen',
+    navAssistantMobile: 'AI'
+  }
+};
+
+function updateUILanguage() {
+  const lang = getLanguage();
+  const labels = UI_LABELS[lang] || UI_LABELS.en;
+
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+
+  setText('diet-section-title', labels.dietSectionTitle);
+  setText('diet-view-name', labels.dietViewName);
+  setText('shopping-title', labels.shoppingTitle);
+  setText('diet-empty-title', labels.emptyTitle);
+  setText('diet-empty-line1', labels.emptyLine1);
+  setText('diet-empty-line2', labels.emptyLine2);
+  setText('diet-empty-import-btn', labels.emptyButton);
+  setText('diet-add-meal-btn', labels.addMeal);
+  setText('add-item-btn', labels.addItem);
+  setText('generate-list-btn', labels.generateList);
+  setText('filter-all', labels.filterAll);
+  setText('filter-pending', labels.filterPending);
+  setText('filter-completed', labels.filterCompleted);
+  setText('shopping-empty', labels.shoppingEmpty);
+  setText('nav-label-diet-desktop', labels.navDiet);
+  setText('nav-label-diet-mobile', labels.navDiet);
+  setText('nav-label-import-desktop', labels.navImport);
+  setText('nav-label-import-mobile', labels.navImportMobile);
+  setText('nav-label-shopping-desktop', labels.navShopping);
+  setText('nav-label-shopping-mobile', labels.navShoppingMobile);
+  setText('nav-label-assistant-desktop', labels.navAssistant);
+  setText('nav-label-assistant-mobile', labels.navAssistantMobile);
+}
+
 // =====================
 // Utility Functions
 // =====================
@@ -161,7 +384,7 @@ function setupNavigation() {
   const desktopNavItems = $$('.desktop-nav-item');
   const sections = $$('.section');
 
-  function switchSection(sectionId) {
+  window.switchSection = function(sectionId) {
     mobileNavItems.forEach(nav => nav.classList.remove('active'));
     desktopNavItems.forEach(nav => nav.classList.remove('active'));
 
@@ -187,19 +410,19 @@ function setupNavigation() {
 
   mobileNavItems.forEach(item => {
     item.addEventListener('click', () => {
-      switchSection(item.dataset.section);
+      window.switchSection(item.dataset.section);
     });
   });
 
   desktopNavItems.forEach(item => {
     item.addEventListener('click', () => {
-      switchSection(item.dataset.section);
+      window.switchSection(item.dataset.section);
     });
   });
 
   // Quick Actions from empty state
   $('#diet-empty-import-btn')?.addEventListener('click', () => {
-    switchSection('import');
+    window.switchSection('import');
   });
 
   // Add meal button from Mi Dieta
@@ -230,6 +453,16 @@ async function loadMeals() {
 
   if (!error && data) {
     meals = data;
+    // Detect language from meal data
+    if (data.length > 0) {
+      const lang = data[0].language;
+      if (lang && DAY_LABELS[lang]) {
+        currentLanguage = lang;
+      } else {
+        // Try to auto-detect from meal descriptions
+        currentLanguage = detectLanguage(data.map(m => m.name + ' ' + (m.description || '')).join(' '));
+      }
+    }
   }
 }
 
@@ -249,6 +482,7 @@ async function loadShoppingItems() {
 // Mi Dieta (Main View)
 // =====================
 function updateDietView() {
+  updateUILanguage();
   $('#current-date').textContent = formatDate(new Date());
 
   const emptyView = $('#diet-empty');
@@ -264,7 +498,16 @@ function updateDietView() {
   dietView.classList.remove('hidden');
 
   const daysWithMeals = new Set(meals.map(m => m.day_of_week));
-  $('#diet-view-meta').textContent = `${meals.length} comidas esta semana (${daysWithMeals.size} dias)`;
+  const metaLabels = {
+    en: `${meals.length} meals this week (${daysWithMeals.size} days)`,
+    es: `${meals.length} comidas esta semana (${daysWithMeals.size} días)`,
+    pt: `${meals.length} refeições esta semana (${daysWithMeals.size} dias)`,
+    fr: `${meals.length} repas cette semaine (${daysWithMeals.size} jours)`,
+    de: `${meals.length} Mahlzeiten diese Woche (${daysWithMeals.size} Tage)`,
+    it: `${meals.length} pasti questa settimana (${daysWithMeals.size} giorni)`,
+    nl: `${meals.length} maaltijden deze week (${daysWithMeals.size} dagen)`
+  };
+  $('#diet-view-meta').textContent = metaLabels[lang] || metaLabels.en;
 
   const container = $('#diet-days-grid');
   const todayName = getCurrentDayOfWeek();
@@ -300,12 +543,21 @@ function updateDietView() {
       </div>
     `).join('');
 
-    const emptySlot = mealCount === 0 ? `<div class="diet-meal empty-slot">Sin comidas planificadas</div>` : '';
+    const emptyTexts = {
+      en: 'No meals planned',
+      es: 'Sin comidas planificadas',
+      pt: 'Sem refeições planificadas',
+      fr: 'Aucun repas planifié',
+      de: 'Keine Mahlzeiten geplant',
+      it: 'Nessun pasto pianificato',
+      nl: 'Geen maaltijden gepland'
+    };
+    const emptySlot = mealCount === 0 ? `<div class="diet-meal empty-slot">${emptyTexts[lang] || emptyTexts.en}</div>` : '';
 
     return `
       <div class="diet-day-card ${isToday ? 'today' : ''}">
         <div class="diet-day-header">
-          <span class="diet-day-name">${day}</span>
+          <span class="diet-day-name">${dayLabels[day] || day}</span>
           ${mealCount > 0 ? `<span class="diet-day-count">${mealCount}</span>` : ''}
         </div>
         <div class="diet-day-meals">
@@ -427,7 +679,9 @@ function renderShoppingList(filter = 'all') {
   }
 
   if (filteredItems.length === 0) {
-    container.innerHTML = '<p class="empty-state">Tu lista de la compra esta vacia. Genera desde las comidas o anade items manualmente.</p>';
+    const lang = getLanguage();
+    const labels = UI_LABELS[lang] || UI_LABELS.en;
+    container.innerHTML = `<p class="empty-state" id="shopping-empty">${labels.shoppingEmpty}</p>`;
     return;
   }
 
@@ -1121,6 +1375,7 @@ function parseDietPlan(text) {
   logParse('info', `Input length: ${text.length} chars`);
 
   const lang = detectLanguage(text);
+  currentLanguage = lang;
   const lines = text.split('\n');
   const parsedMealsList = [];
   let currentDay = null;
@@ -1187,6 +1442,10 @@ function renderPreview(mealsList) {
     return;
   }
 
+  const lang = getLanguage();
+  const dayLabels = DAY_LABELS[lang] || DAY_LABELS.en;
+  const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
+
   const mealsByDay = {};
   DAYS.forEach(day => mealsByDay[day] = []);
   mealsList.forEach(meal => {
@@ -1200,13 +1459,13 @@ function renderPreview(mealsList) {
     .map(([day, dayMeals]) => `
       <div class="preview-day">
         <div class="preview-day-header">
-          <h4>${day}</h4>
+          <h4>${dayLabels[day] || day}</h4>
           <span class="preview-day-count">${dayMeals.length} meal${dayMeals.length !== 1 ? 's' : ''}</span>
         </div>
         <div class="preview-meals">
           ${dayMeals.map(meal => `
             <div class="preview-meal">
-              <span class="preview-meal-type ${meal.meal_type}">${meal.meal_type}</span>
+              <span class="preview-meal-type ${meal.meal_type}">${mealTypeLabels[meal.meal_type] || meal.meal_type}</span>
               <span class="preview-meal-name">${meal.name}</span>
               ${meal.calories ? `<span class="preview-meal-calories">${meal.calories} kcal</span>` : ''}
             </div>
@@ -1326,7 +1585,8 @@ function setupImport() {
     try {
       const mealsToInsert = parsedMeals.map(meal => ({
         ...meal,
-        user_id: currentUser.id
+        user_id: currentUser.id,
+        language: currentLanguage
       }));
 
       const { error } = await supabase
@@ -1349,6 +1609,7 @@ function setupImport() {
 
       await loadMeals();
       updateDietView();
+      window.switchSection('diet');
 
     } catch (error) {
       console.error('Import error:', error);
@@ -1367,7 +1628,8 @@ function setupImport() {
     try {
       const mealsToInsert = parsedMeals.map(meal => ({
         ...meal,
-        user_id: currentUser.id
+        user_id: currentUser.id,
+        language: currentLanguage
       }));
 
       const { error: mealError } = await supabase
@@ -1378,6 +1640,7 @@ function setupImport() {
 
       await loadMeals();
       updateDietView();
+      window.switchSection('diet');
 
       const allIngredients = new Map();
       parsedMeals.forEach(meal => {
