@@ -1138,7 +1138,7 @@ function cleanMealName(line, mealType, day) {
   for (const translations of Object.values(MULTILANG_MEAL_TYPES)) {
     for (const langNames of Object.values(translations)) {
       for (const name of langNames) {
-        const regex = new RegExp(`^${name}\s*[:\-]?\s*`, 'i');
+        const regex = new RegExp(`^${name}\\s*[:\\-]?\\s*`, 'i');
         cleaned = cleaned.replace(regex, '');
       }
     }
