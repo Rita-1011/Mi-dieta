@@ -19,6 +19,9 @@ const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '');
 let currentUser = null;
 let meals = [];
 let shoppingItems = [];
+let pendingImportCallback = null;
+let confirmCallback = null;
+let activeMealId = null;
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -561,6 +564,14 @@ function updateDietView() {
         <div class="diet-meal">
           <div class="meal-header">
             <span class="meal-type ${meal.meal_type}">${mealIcons[meal.meal_type]} ${mealTypeLabel}</span>
+            <div class="meal-actions">
+              <button class="meal-action-btn" onclick="window.editMeal('${meal.id}')" title="Editar">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+              <button class="meal-action-btn danger" onclick="window.deleteMealItem('${meal.id}')" title="Eliminar">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
           </div>
           <div class="meal-name">${meal.name}</div>
           ${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}
@@ -579,6 +590,9 @@ function updateDietView() {
         </div>
         <div class="diet-meals">
           ${mealsList || emptySlot}
+        </div>
+        <div class="diet-day-footer">
+          <button class="add-meal-day-btn" onclick="window.addMealToDay('${day}')">+ Añadir</button>
         </div>
       </div>
     `;
@@ -1347,148 +1361,273 @@ function setupImport() {
     renderParseLog();
   });
 
-  clearBtn.addEventListener('click', () => {
-    dietText.value = '';
-    parsedMeals = [];
-    parseLog.length = 0;
-    $('#import-preview').classList.add('hidden');
-    $('#import-placeholder').classList.remove('hidden');
-    $('#parse-log').classList.add('hidden');
-    importBtn.disabled = true;
-    importShoppingBtn.disabled = true;
-    if (langBadge) langBadge.classList.add('hidden');
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    dietText.value = '';
-    parsedMeals = [];
-    parseLog.length = 0;
-    $('#import-preview').classList.add('hidden');
-    $('#import-placeholder').classList.remove('hidden');
-    $('#parse-log').classList.add('hidden');
-    importBtn.disabled = true;
-    importShoppingBtn.disabled = true;
-    if (langBadge) langBadge.classList.add('hidden');
-  });
+  clearBtn.addEventListener('click', resetImportUI);
+  cancelBtn.addEventListener('click', resetImportUI);
 
   importBtn.addEventListener('click', async () => {
     if (parsedMeals.length === 0) return;
 
-    importBtn.disabled = true;
-    importBtn.innerHTML = 'Importando…';
+    const doImport = async () => {
+      importBtn.disabled = true;
+      importBtn.innerHTML = 'Importando…';
+      try {
+        const mealsToInsert = parsedMeals.map(meal => ({
+          ...meal,
+          user_id: currentUser.id,
+          language: currentLanguage
+        }));
+        const { error } = await supabase.from('meals').insert(mealsToInsert);
+        if (error) throw error;
+        showToast(`¡Importadas ${parsedMeals.length} comidas con éxito!`, 'success');
+        resetImportUI();
+        await loadMeals();
+        updateDietView();
+        window.switchSection('diet');
+      } catch (err) {
+        console.error('Error de importación:', err);
+        showToast('Error al importar comidas. Por favor, intenta de nuevo.', 'error');
+        importBtn.disabled = false;
+        importBtn.innerHTML = 'Importar comidas';
+      }
+    };
 
-    try {
-      const mealsToInsert = parsedMeals.map(meal => ({
-        ...meal,
-        user_id: currentUser.id,
-        language: currentLanguage
-      }));
-
-      const { error } = await supabase
-        .from('meals')
-        .insert(mealsToInsert);
-
-      if (error) throw error;
-
-      showToast(`¡Importadas ${parsedMeals.length} comidas con éxito!`, 'success');
-
-      dietText.value = '';
-      parsedMeals = [];
-      parseLog.length = 0;
-      $('#import-preview').classList.add('hidden');
-      $('#import-placeholder').classList.remove('hidden');
-      importBtn.innerHTML = 'Importar comidas';
-      const langBadge = $('#detected-language');
-      if (langBadge) langBadge.classList.add('hidden');
-
-      await loadMeals();
-      updateDietView();
-      window.switchSection('diet');
-
-    } catch (error) {
-      console.error('Error de importación:', error);
-      showToast('Error al importar comidas. Por favor, intenta de nuevo.', 'error');
-      importBtn.disabled = false;
-      importBtn.innerHTML = 'Importar comidas';
+    if (meals.length > 0) {
+      showImportConfirm(doImport);
+      return;
     }
+    await doImport();
   });
 
   importShoppingBtn.addEventListener('click', async () => {
     if (parsedMeals.length === 0) return;
 
-    importShoppingBtn.disabled = true;
-    importShoppingBtn.innerHTML = 'Importando…';
+    const doImport = async () => {
+      importShoppingBtn.disabled = true;
+      importShoppingBtn.innerHTML = 'Importando…';
+      try {
+        const mealsToInsert = parsedMeals.map(meal => ({
+          ...meal,
+          user_id: currentUser.id,
+          language: currentLanguage
+        }));
+        const { error: mealError } = await supabase.from('meals').insert(mealsToInsert);
+        if (mealError) throw mealError;
 
-    try {
-      const mealsToInsert = parsedMeals.map(meal => ({
-        ...meal,
-        user_id: currentUser.id,
-        language: currentLanguage
-      }));
+        await loadMeals();
+        updateDietView();
+        window.switchSection('diet');
 
-      const { error: mealError } = await supabase
-        .from('meals')
-        .insert(mealsToInsert);
-
-      if (mealError) throw mealError;
-
-      await loadMeals();
-      updateDietView();
-      window.switchSection('diet');
-
-      const allIngredients = new Map();
-      parsedMeals.forEach(meal => {
-        (meal.ingredients || []).forEach(ingredient => {
-          const key = ingredient.toLowerCase().trim();
-          if (key) {
-            allIngredients.set(key, (allIngredients.get(key) || 0) + 1);
-          }
-        });
-      });
-
-      const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
-      const newItems = [];
-
-      for (const [name, count] of allIngredients) {
-        if (!existingNames.has(name)) {
-          newItems.push({
-            user_id: currentUser.id,
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            quantity: count > 1 ? `${count}x` : '1',
-            completed: false,
-            is_custom: false
+        const allIngredients = new Map();
+        parsedMeals.forEach(meal => {
+          (meal.ingredients || []).forEach(ingredient => {
+            const key = ingredient.toLowerCase().trim();
+            if (key) allIngredients.set(key, (allIngredients.get(key) || 0) + 1);
           });
+        });
+
+        const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
+        const newItems = [];
+        for (const [name, count] of allIngredients) {
+          if (!existingNames.has(name)) {
+            newItems.push({
+              user_id: currentUser.id,
+              name: name.charAt(0).toUpperCase() + name.slice(1),
+              quantity: count > 1 ? `${count}x` : '1',
+              completed: false,
+              is_custom: false
+            });
+          }
         }
+
+        if (newItems.length > 0) {
+          const { error: shopError } = await supabase.from('shopping_items').insert(newItems);
+          if (shopError) logParse('warn', `Error al insertar lista de compra: ${shopError.message}`);
+        }
+
+        await loadShoppingItems();
+        renderShoppingList();
+        showToast(`¡Importadas ${parsedMeals.length} comidas + ${newItems.length} artículos de compra!`, 'success');
+        resetImportUI();
+      } catch (err) {
+        console.error('Error de importación:', err);
+        showToast('Error al importar. Por favor, intenta de nuevo.', 'error');
+        importShoppingBtn.disabled = false;
+        importShoppingBtn.innerHTML = 'Importar + lista de la compra';
       }
+    };
 
-      if (newItems.length > 0) {
-        const { error: shopError } = await supabase
-          .from('shopping_items')
-          .insert(newItems);
-        if (shopError) logParse('warn', `Error al insertar lista de compra: ${shopError.message}`);
-      }
-
-      await loadShoppingItems();
-      renderShoppingList();
-
-      showToast(`¡Importadas ${parsedMeals.length} comidas + ${newItems.length} artículos de compra!`, 'success');
-
-      dietText.value = '';
-      parsedMeals = [];
-      parseLog.length = 0;
-      $('#import-preview').classList.add('hidden');
-      $('#import-placeholder').classList.remove('hidden');
-      importShoppingBtn.innerHTML = 'Importar + lista de la compra';
-      if (langBadge) langBadge.classList.add('hidden');
-
-    } catch (error) {
-      console.error('Error de importación:', error);
-      showToast('Error al importar. Por favor, intenta de nuevo.', 'error');
-      importShoppingBtn.disabled = false;
-      importShoppingBtn.innerHTML = 'Importar + lista de la compra';
+    if (meals.length > 0) {
+      showImportConfirm(doImport);
+      return;
     }
+    await doImport();
   });
 }
+
+function resetImportUI() {
+  const langBadge = $('#detected-language');
+  $('#diet-text').value = '';
+  parsedMeals = [];
+  parseLog.length = 0;
+  $('#import-preview').classList.add('hidden');
+  $('#import-placeholder').classList.remove('hidden');
+  $('#parse-log').classList.add('hidden');
+  $('#import-meals-btn').disabled = true;
+  $('#import-meals-btn').innerHTML = 'Importar comidas';
+  $('#import-shopping-btn').disabled = true;
+  $('#import-shopping-btn').innerHTML = 'Importar + lista de la compra';
+  if (langBadge) langBadge.classList.add('hidden');
+}
+
+function showImportConfirm(callback) {
+  pendingImportCallback = callback;
+  $('#import-confirm-modal').classList.remove('hidden');
+}
+
+function showConfirm(title, message, callback) {
+  $('#confirm-title').textContent = title;
+  $('#confirm-message').textContent = message;
+  confirmCallback = callback;
+  $('#confirm-modal').classList.remove('hidden');
+}
+
+// =====================
+// Gestión de comidas
+// =====================
+function setupMealManagement() {
+  // Delete plan
+  $('#delete-plan-btn')?.addEventListener('click', () => {
+    showConfirm(
+      'Eliminar plan de alimentación',
+      '¿Seguro que quieres eliminar todo tu plan? Esta acción no se puede deshacer.',
+      deletePlan
+    );
+  });
+
+  // Generic confirm modal
+  const closeConfirm = () => {
+    $('#confirm-modal').classList.add('hidden');
+    confirmCallback = null;
+  };
+  $$('#confirm-modal .modal-close, #confirm-modal .confirm-cancel').forEach(b => b.addEventListener('click', closeConfirm));
+  $('#confirm-modal .modal-overlay')?.addEventListener('click', closeConfirm);
+  $('#confirm-ok').addEventListener('click', async () => {
+    closeConfirm();
+    if (confirmCallback) { await confirmCallback(); confirmCallback = null; }
+  });
+
+  // Import confirm modal
+  const closeImportConfirm = () => {
+    $('#import-confirm-modal').classList.add('hidden');
+    pendingImportCallback = null;
+    $('#import-meals-btn').disabled = false;
+    $('#import-shopping-btn').disabled = false;
+  };
+  $$('#import-confirm-modal .modal-close, #import-confirm-modal .import-confirm-cancel').forEach(b => b.addEventListener('click', closeImportConfirm));
+  $('#import-confirm-modal .modal-overlay')?.addEventListener('click', closeImportConfirm);
+
+  $('#import-confirm-replace').addEventListener('click', async () => {
+    closeImportConfirm();
+    if (!pendingImportCallback) return;
+    const cb = pendingImportCallback;
+    pendingImportCallback = null;
+    const { error } = await supabase.from('meals').delete().eq('user_id', currentUser.id);
+    if (error) { showToast('Error al eliminar el plan existente', 'error'); return; }
+    meals = [];
+    await cb();
+  });
+
+  $('#import-confirm-merge').addEventListener('click', async () => {
+    closeImportConfirm();
+    if (!pendingImportCallback) return;
+    const cb = pendingImportCallback;
+    pendingImportCallback = null;
+    await cb();
+  });
+
+  // Meal form modal (edit + add)
+  const closeMealForm = () => {
+    $('#meal-form-modal').classList.add('hidden');
+    activeMealId = null;
+  };
+  $$('#meal-form-modal .modal-close, #meal-form-modal .modal-cancel').forEach(b => b.addEventListener('click', closeMealForm));
+  $('#meal-form-modal .modal-overlay')?.addEventListener('click', closeMealForm);
+
+  $('#meal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('#meal-form-name').value.trim();
+    const description = $('#meal-form-description').value.trim() || null;
+    const meal_type = $('#meal-form-type').value;
+    const day_of_week = $('#meal-form-day').value;
+
+    if (activeMealId) {
+      const { error } = await supabase
+        .from('meals')
+        .update({ name, description, meal_type, day_of_week })
+        .eq('id', activeMealId);
+      if (error) { showToast('Error al guardar los cambios', 'error'); return; }
+      showToast('Comida actualizada', 'success');
+    } else {
+      const { error } = await supabase.from('meals').insert({
+        user_id: currentUser.id,
+        name,
+        description,
+        meal_type,
+        day_of_week,
+        ingredients: [],
+        language: currentLanguage
+      });
+      if (error) { showToast('Error al añadir la comida', 'error'); return; }
+      showToast('Comida añadida', 'success');
+    }
+
+    closeMealForm();
+    await loadMeals();
+    updateDietView();
+  });
+}
+
+async function deletePlan() {
+  const { error } = await supabase.from('meals').delete().eq('user_id', currentUser.id);
+  if (error) { showToast('Error al eliminar el plan', 'error'); return; }
+  showToast('Plan eliminado', 'success');
+  meals = [];
+  updateDietView();
+}
+
+window.editMeal = (id) => {
+  const meal = meals.find(m => m.id === id);
+  if (!meal) return;
+  activeMealId = id;
+  $('#meal-form-title').textContent = 'Editar comida';
+  $('#meal-form-submit').textContent = 'Guardar cambios';
+  $('#meal-form-name').value = meal.name;
+  $('#meal-form-description').value = meal.description || '';
+  $('#meal-form-type').value = meal.meal_type;
+  $('#meal-form-day').value = meal.day_of_week;
+  $('#meal-form-modal').classList.remove('hidden');
+};
+
+window.deleteMealItem = (id) => {
+  showConfirm('Eliminar comida', '¿Seguro que quieres eliminar esta comida?', async () => {
+    const { error } = await supabase.from('meals').delete().eq('id', id);
+    if (error) { showToast('Error al eliminar la comida', 'error'); return; }
+    showToast('Comida eliminada', 'success');
+    await loadMeals();
+    updateDietView();
+  });
+};
+
+window.addMealToDay = (day) => {
+  activeMealId = null;
+  $('#meal-form-title').textContent = 'Añadir comida';
+  $('#meal-form-submit').textContent = 'Añadir comida';
+  $('#meal-form-name').value = '';
+  $('#meal-form-description').value = '';
+  $('#meal-form-type').value = 'breakfast';
+  $('#meal-form-day').value = day;
+  $('#meal-form-modal').classList.remove('hidden');
+};
 
 // =====================
 // Inicialización
@@ -1500,6 +1639,7 @@ async function init() {
   setupItemModal();
   setupAssistant();
   setupImport();
+  setupMealManagement();
 
   await initAuth();
 }

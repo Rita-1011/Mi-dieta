@@ -554,8 +554,15 @@ code {
 .diet-view-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.diet-view-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .diet-view-name {
@@ -1361,4 +1368,139 @@ code {
   .preview-actions .btn { width: 100%; justify-content: center; }
   .import-actions { flex-direction: column; }
   .import-actions .btn { width: 100%; }
+}
+
+/* ===================== */
+/* Meal management       */
+/* ===================== */
+
+/* Meal action buttons (edit / delete) */
+.meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.meal-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.diet-meal:hover .meal-actions { opacity: 1; }
+
+.meal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+
+.meal-action-btn:hover {
+  color: var(--gray-700);
+  background: var(--gray-200);
+}
+
+.meal-action-btn.danger:hover {
+  color: var(--red-600);
+  background: var(--red-100);
+}
+
+/* Day footer with add-meal button */
+.diet-day-footer {
+  border-top: 1px solid var(--gray-100);
+  padding: 6px 8px;
+}
+
+.add-meal-day-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  background: none;
+  border: 1px dashed var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+}
+
+.add-meal-day-btn:hover {
+  border-color: var(--green-400);
+  color: var(--green-600);
+  background: var(--green-50);
+}
+
+/* Delete plan button hint color */
+#delete-plan-btn {
+  color: var(--gray-500);
+  font-size: 0.8125rem;
+}
+
+#delete-plan-btn:hover {
+  color: var(--red-600);
+  background: var(--red-100);
+}
+
+/* Smaller modal variant */
+.modal-sm {
+  max-width: 400px;
+}
+
+/* Stacked confirm buttons */
+.confirm-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.confirm-stack .btn { justify-content: center; }
+
+/* Button hint tag */
+.btn-hint {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: rgb(255 255 255 / 0.25);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: 4px;
+}
+
+.btn-primary .btn-hint {
+  background: rgb(255 255 255 / 0.2);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Form helpers */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.label-optional {
+  font-weight: 400;
+  color: var(--gray-400);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+  .confirm-stack .btn { font-size: 0.875rem; }
 }

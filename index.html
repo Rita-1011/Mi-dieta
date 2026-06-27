@@ -159,8 +159,14 @@
 
             <div id="diet-view" class="diet-view hidden">
               <div class="diet-view-bar">
-                <span class="diet-view-name" id="diet-view-name">Mi Plan</span>
-                <span class="diet-view-meta" id="diet-view-meta"></span>
+                <div class="diet-view-info">
+                  <span class="diet-view-name" id="diet-view-name">Mi Plan</span>
+                  <span class="diet-view-meta" id="diet-view-meta"></span>
+                </div>
+                <button id="delete-plan-btn" class="btn btn-ghost btn-sm">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                  Eliminar plan
+                </button>
               </div>
               <div class="diet-days-grid" id="diet-days-grid"></div>
             </div>
@@ -365,6 +371,94 @@ Colación: Yogur griego con nueces"></textarea>
               <button type="submit" class="btn btn-primary">Añadir artículo</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Modal: editar / añadir comida -->
+      <div id="meal-form-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="meal-form-title">Editar comida</h3>
+            <button class="modal-close" aria-label="Cerrar">&times;</button>
+          </div>
+          <form id="meal-form" class="modal-body">
+            <div class="form-group">
+              <label for="meal-form-name">Nombre</label>
+              <input type="text" id="meal-form-name" required placeholder="Nombre de la comida">
+            </div>
+            <div class="form-group">
+              <label for="meal-form-description">Descripción <span class="label-optional">(opcional)</span></label>
+              <textarea id="meal-form-description" rows="2" placeholder="Ingredientes principales u observaciones"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="meal-form-type">Tipo</label>
+                <select id="meal-form-type">
+                  <option value="breakfast">Desayuno</option>
+                  <option value="lunch">Almuerzo</option>
+                  <option value="dinner">Cena</option>
+                  <option value="snack">Colación</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="meal-form-day">Día</label>
+                <select id="meal-form-day">
+                  <option value="monday">Lunes</option>
+                  <option value="tuesday">Martes</option>
+                  <option value="wednesday">Miércoles</option>
+                  <option value="thursday">Jueves</option>
+                  <option value="friday">Viernes</option>
+                  <option value="saturday">Sábado</option>
+                  <option value="sunday">Domingo</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-ghost modal-cancel">Cancelar</button>
+              <button type="submit" id="meal-form-submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal: confirmar importación sobre plan existente -->
+      <div id="import-confirm-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h3>Plan existente</h3>
+            <button class="modal-close" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Ya tienes un plan de alimentación importado. ¿Qué quieres hacer con el nuevo plan?</p>
+            <div class="confirm-stack">
+              <button id="import-confirm-replace" class="btn btn-primary btn-full">
+                Reemplazar el plan actual
+                <span class="btn-hint">recomendado</span>
+              </button>
+              <button id="import-confirm-merge" class="btn btn-secondary btn-full">Combinar con el plan existente</button>
+              <button class="btn btn-ghost btn-full import-confirm-cancel">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: confirmación genérica -->
+      <div id="confirm-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h3 id="confirm-title">Confirmar</h3>
+            <button class="modal-close" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p id="confirm-message"></p>
+            <div class="modal-footer">
+              <button class="btn btn-ghost confirm-cancel">Cancelar</button>
+              <button id="confirm-ok" class="btn btn-danger">Eliminar</button>
+            </div>
+          </div>
         </div>
       </div>
 
