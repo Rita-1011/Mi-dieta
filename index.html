@@ -4,154 +4,253 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mi Organizador de Dieta</title>
-    <meta name="description" content="Organiza tu dieta semanal, importa planes de alimentación en cualquier idioma y genera listas de compra.">
-    <meta property="og:image" content="https://bolt.new/static/og_default.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
-</head>
+    <title>Plan Nutricional</title>
+    <meta name="description" content="Tu planificador de alimentación semanal personalizado.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
   <body>
     <div id="app">
-      <!-- Auth Modal -->
+
+      <!-- Auth -->
       <div id="auth-modal" class="auth-modal">
-        <div class="auth-container">
+        <div class="auth-card">
           <div class="auth-header">
-            <h1>Mi Organizador de Dieta</h1>
+            <div class="auth-logo">
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                <rect width="44" height="44" rx="14" fill="#059669"/>
+                <path d="M22 12C17 12 13 16 13 21C13 24 14.5 26.5 17 28L17 30C17 30.6 17.4 31 18 31L26 31C26.6 31 27 30.6 27 30L27 28C29.5 26.5 31 24 31 21C31 16 27 12 22 12Z" fill="white" fill-opacity="0.92"/>
+                <path d="M19 28.5L19 30.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M22 29L22 31" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M25 28.5L25 30.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h1>Plan Nutricional</h1>
             <p class="auth-subtitle">Tu planificador de alimentación personal</p>
           </div>
 
-          <!-- Login Form -->
           <form id="login-form" class="auth-form active">
-            <h2>Bienvenido de Nuevo</h2>
+            <h2>Bienvenido de nuevo</h2>
             <div class="form-group">
-              <label for="login-email">Correo Electrónico</label>
-              <input type="email" id="login-email" placeholder="Introduce tu correo" required>
+              <label for="login-email">Correo electrónico</label>
+              <input type="email" id="login-email" placeholder="tu@correo.com" required>
             </div>
             <div class="form-group">
               <label for="login-password">Contraseña</label>
-              <input type="password" id="login-password" placeholder="Introduce tu contraseña" required>
+              <input type="password" id="login-password" placeholder="Tu contraseña" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
-            <p class="auth-switch">¿No tienes una cuenta? <a href="#" id="show-register">Crear una</a></p>
+            <button type="submit" class="btn btn-primary btn-full">Iniciar sesión</button>
+            <p class="auth-switch">¿No tienes cuenta? <a href="#" id="show-register">Crear cuenta</a></p>
           </form>
 
-          <!-- Register Form -->
           <form id="register-form" class="auth-form">
-            <h2>Crear Cuenta</h2>
+            <h2>Crear cuenta</h2>
             <div class="form-group">
-              <label for="register-name">Nombre Completo</label>
-              <input type="text" id="register-name" placeholder="Introduce tu nombre" required>
+              <label for="register-name">Nombre completo</label>
+              <input type="text" id="register-name" placeholder="Tu nombre" required>
             </div>
             <div class="form-group">
-              <label for="register-email">Correo Electrónico</label>
-              <input type="email" id="register-email" placeholder="Introduce tu correo" required>
+              <label for="register-email">Correo electrónico</label>
+              <input type="email" id="register-email" placeholder="tu@correo.com" required>
             </div>
             <div class="form-group">
               <label for="register-password">Contraseña</label>
-              <input type="password" id="register-password" placeholder="Crea una contraseña (mínimo 6 caracteres)" required minlength="6">
+              <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required minlength="6">
             </div>
-            <button type="submit" class="btn btn-primary btn-full">Crear Cuenta</button>
-            <p class="auth-switch">¿Ya tienes una cuenta? <a href="#" id="show-login">Iniciar sesión</a></p>
+            <button type="submit" class="btn btn-primary btn-full">Crear cuenta</button>
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="show-login">Iniciar sesión</a></p>
           </form>
         </div>
       </div>
 
-      <!-- Main App -->
+      <!-- Aplicación principal -->
       <div id="main-app" class="main-app hidden">
-        <!-- Navigation -->
-        <nav class="navbar">
-          <div class="nav-brand">
-            <span class="nav-logo">🥗</span>
-            <span class="nav-title">Mi Organizador de Dieta</span>
-          </div>
-          <div class="nav-user">
-            <span id="user-name" class="user-greeting"></span>
-            <button id="logout-btn" class="btn btn-outline btn-sm">Cerrar Sesión</button>
-          </div>
-        </nav>
 
-        <!-- Desktop Navigation -->
+        <!-- Barra superior -->
+        <header class="navbar">
+          <div class="nav-brand">
+            <div class="nav-logo-wrap">
+              <svg width="30" height="30" viewBox="0 0 44 44" fill="none">
+                <rect width="44" height="44" rx="12" fill="#059669"/>
+                <path d="M22 12C17 12 13 16 13 21C13 24 14.5 26.5 17 28L17 30C17 30.6 17.4 31 18 31L26 31C26.6 31 27 30.6 27 30L27 28C29.5 26.5 31 24 31 21C31 16 27 12 22 12Z" fill="white" fill-opacity="0.92"/>
+                <path d="M19 28.5L19 30.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M22 29L22 31" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M25 28.5L25 30.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <span class="nav-title">Plan nutricional</span>
+          </div>
+
+          <div class="nav-plan-meta">
+            <div class="nav-meta-field">
+              <span class="nav-meta-label">Dieta de</span>
+              <span class="nav-meta-value" id="user-name">—</span>
+            </div>
+            <span class="nav-meta-sep" aria-hidden="true">·</span>
+            <div class="nav-meta-field">
+              <span class="nav-meta-label">Período</span>
+              <span class="nav-meta-value" id="plan-period">No especificado</span>
+            </div>
+          </div>
+
+          <div class="nav-actions">
+            <button id="logout-btn" class="btn btn-ghost btn-sm">Cerrar sesión</button>
+          </div>
+        </header>
+
+        <!-- Navegación de escritorio -->
         <nav class="desktop-nav">
           <button class="desktop-nav-item active" data-section="diet">
-            <span class="nav-icon">🥗</span>
-            <span class="nav-label" id="nav-label-diet-desktop">Mi Dieta</span>
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+            </svg>
+            <span class="nav-label" id="nav-label-diet-desktop">Mi Plan</span>
           </button>
           <button class="desktop-nav-item" data-section="import">
-            <span class="nav-icon">📥</span>
-            <span class="nav-label" id="nav-label-import-desktop">Importar Dieta</span>
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+            <span class="nav-label" id="nav-label-import-desktop">Importar dieta</span>
           </button>
           <button class="desktop-nav-item" data-section="shopping">
-            <span class="nav-icon">🛒</span>
-            <span class="nav-label" id="nav-label-shopping-desktop">Lista de la Compra</span>
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+            </svg>
+            <span class="nav-label" id="nav-label-shopping-desktop">Lista de la compra</span>
           </button>
           <button class="desktop-nav-item" data-section="assistant">
-            <span class="nav-icon">🤖</span>
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+            </svg>
             <span class="nav-label" id="nav-label-assistant-desktop">Asistente IA</span>
           </button>
         </nav>
 
-        <!-- Mobile Navigation -->
-        <nav class="mobile-nav">
-          <button class="mobile-nav-item active" data-section="diet">
-            <span class="nav-icon">🥗</span>
-            <span class="nav-label" id="nav-label-diet-mobile">Mi Dieta</span>
-          </button>
-          <button class="mobile-nav-item" data-section="import">
-            <span class="nav-icon">📥</span>
-            <span class="nav-label" id="nav-label-import-mobile">Importar</span>
-          </button>
-          <button class="mobile-nav-item" data-section="shopping">
-            <span class="nav-icon">🛒</span>
-            <span class="nav-label" id="nav-label-shopping-mobile">Compra</span>
-          </button>
-          <button class="mobile-nav-item" data-section="assistant">
-            <span class="nav-icon">🤖</span>
-            <span class="nav-label" id="nav-label-assistant-mobile">IA</span>
-          </button>
-        </nav>
-
-        <!-- Main Content -->
+        <!-- Contenido -->
         <main class="main-content">
-          <!-- Mi Dieta Section -->
+
+          <!-- Mi Plan -->
           <section id="diet-section" class="section active">
             <div class="section-header">
-              <h2 id="diet-section-title">Mi Dieta</h2>
-              <p class="section-subtitle" id="current-date"></p>
+              <div>
+                <h2 id="diet-section-title">Mi Plan</h2>
+                <p class="section-subtitle" id="current-date"></p>
+              </div>
             </div>
 
-            <!-- Empty state -->
-            <div id="diet-empty" class="diet-empty">
-              <div class="empty-icon">🥗</div>
+            <div id="diet-empty" class="empty-state-card">
+              <div class="empty-icon-wrap">
+                <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+                  <path d="M22 6C14.3 6 8 12.3 8 20C8 24.4 10.1 28.3 13.3 30.9L13 33C13 34.1 13.9 35 15 35L29 35C30.1 35 31 34.1 31 33L30.7 30.9C33.9 28.3 36 24.4 36 20C36 12.3 29.7 6 22 6Z" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                  <path d="M18 34L18 36" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M22 34.5L22 37" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M26 34L26 36" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
               <h3 id="diet-empty-title">¡Bienvenido!</h3>
-              <p id="diet-empty-line1">Aún no tienes ninguna dieta planificada.</p>
-              <p id="diet-empty-line2">Importa tu plan de alimentación semanal para empezar.</p>
-              <button class="btn btn-primary btn-lg" id="diet-empty-import-btn">
-                <span>📥</span> Importar Dieta
-              </button>
+              <p id="diet-empty-line1">Todavía no tienes ningún plan de alimentación.</p>
+              <p id="diet-empty-line2">Importa tu dieta semanal para empezar a organizarte.</p>
+              <button class="btn btn-primary" id="diet-empty-import-btn">Importar dieta</button>
             </div>
 
-            <!-- Diet view -->
             <div id="diet-view" class="diet-view hidden">
-              <div class="diet-view-header">
-                <div class="diet-view-info">
-                  <span class="diet-view-name" id="diet-view-name">Mi Dieta</span>
-                  <span class="diet-view-meta" id="diet-view-meta">0 comidas esta semana</span>
+              <div class="diet-view-bar">
+                <span class="diet-view-name" id="diet-view-name">Mi Plan</span>
+                <span class="diet-view-meta" id="diet-view-meta"></span>
+              </div>
+              <div class="diet-days-grid" id="diet-days-grid"></div>
+            </div>
+          </section>
+
+          <!-- Importar dieta -->
+          <section id="import-section" class="section">
+            <div class="section-header">
+              <div>
+                <h2>Importar plan de dieta</h2>
+                <p class="section-subtitle">Pega tu plan semanal en cualquier idioma para importarlo automáticamente</p>
+              </div>
+            </div>
+
+            <div class="import-container">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Pega tu plan de dieta</h3>
+                  <span id="detected-language" class="lang-badge hidden"></span>
+                </div>
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="diet-text">Texto del plan de alimentación</label>
+                    <textarea id="diet-text" rows="12" placeholder="Idiomas soportados: español, inglés, portugués, francés, alemán, italiano y neerlandés
+
+Ejemplo:
+Lunes:
+Desayuno: Avena con frutas y yogur
+Almuerzo: Ensalada de pollo a la plancha
+Cena: Salmón con verduras al horno
+Colación: Yogur griego con nueces"></textarea>
+                  </div>
+
+                  <div class="import-format-help">
+                    <button type="button" class="help-toggle-btn" id="format-help-toggle">
+                      <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                      </svg>
+                      Formatos e idiomas soportados
+                    </button>
+                    <div id="format-help" class="format-help hidden">
+                      <div class="help-content">
+                        <p><strong>Idiomas detectados automáticamente:</strong> Español, Inglés, Portugués, Francés, Alemán, Italiano, Neerlandés</p>
+                        <ul>
+                          <li><strong>Días:</strong> Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo</li>
+                          <li><strong>Comidas:</strong> Desayuno · Media mañana · Almuerzo · Merienda · Cena · Colación</li>
+                          <li><strong>Ingredientes:</strong> <code>ingredientes: pollo, arroz, verduras</code></li>
+                        </ul>
+                        <p class="help-example"><strong>Ejemplo:</strong><br>Lunes:<br>Desayuno: Avena con frutas<br>Media mañana: Yogur natural<br>Almuerzo: Pollo a la plancha con ensalada<br>Merienda: Frutos secos<br>Cena: Salmón con verduras al horno</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="import-actions">
+                    <button type="button" id="parse-diet-btn" class="btn btn-primary">Analizar plan</button>
+                    <button type="button" id="clear-diet-btn" class="btn btn-ghost">Limpiar</button>
+                  </div>
                 </div>
               </div>
 
-              <div class="diet-days-grid" id="diet-days-grid">
-                <!-- Días generados por JS -->
+              <div id="parse-log" class="parse-log hidden"></div>
+
+              <div id="import-preview" class="card import-preview hidden">
+                <div class="card-header">
+                  <h3>Vista previa</h3>
+                  <span id="meals-count" class="count-badge"></span>
+                </div>
+                <div id="preview-content" class="preview-content"></div>
+                <div class="preview-actions">
+                  <button type="button" id="import-meals-btn" class="btn btn-primary" disabled>Importar comidas</button>
+                  <button type="button" id="import-shopping-btn" class="btn btn-secondary" disabled>Importar + lista de la compra</button>
+                  <button type="button" id="cancel-import-btn" class="btn btn-ghost">Cancelar</button>
+                </div>
+              </div>
+
+              <div id="import-placeholder" class="placeholder-card">
+                <svg class="placeholder-icon" width="36" height="36" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                <p>Pega tu plan de dieta y haz clic en «Analizar plan» para previsualizar las comidas antes de importar</p>
               </div>
             </div>
           </section>
 
-          <!-- Shopping List Section -->
+          <!-- Lista de la compra -->
           <section id="shopping-section" class="section">
             <div class="section-header">
-              <h2 id="shopping-title">Lista de la Compra</h2>
+              <div>
+                <h2 id="shopping-title">Lista de la compra</h2>
+              </div>
               <div class="header-actions">
-                <button id="generate-list-btn" class="btn btn-primary">Generar desde comidas</button>
-                <button id="add-item-btn" class="btn btn-secondary">+ Añadir</button>
+                <button id="generate-list-btn" class="btn btn-primary btn-sm">Generar desde comidas</button>
+                <button id="add-item-btn" class="btn btn-secondary btn-sm">+ Añadir</button>
               </div>
             </div>
 
@@ -162,23 +261,25 @@
             </div>
 
             <div class="shopping-list" id="shopping-list">
-              <p class="empty-state" id="shopping-empty">Tu lista de la compra está vacía. Genera desde las comidas o añade artículos manualmente.</p>
+              <p class="empty-state" id="shopping-empty">Tu lista de la compra está vacía. Genera los artículos desde las comidas o añade uno manualmente.</p>
             </div>
           </section>
 
-          <!-- AI Assistant Section -->
+          <!-- Asistente IA -->
           <section id="assistant-section" class="section">
             <div class="section-header">
-              <h2>Asistente de Sustitutos de Alimentos</h2>
-              <p class="section-subtitle">Obtén alternativas inteligentes para ingredientes</p>
+              <div>
+                <h2>Asistente de sustitutos</h2>
+                <p class="section-subtitle">Encuentra alternativas saludables para cualquier ingrediente</p>
+              </div>
             </div>
 
             <div class="assistant-container">
-              <div class="search-card card">
+              <div class="card search-card">
                 <div class="card-body">
                   <div class="search-box">
-                    <input type="text" id="ingredient-input" placeholder="Introduce un ingrediente (ej. mantequilla, azúcar, leche)">
-                    <button id="search-substitute-btn" class="btn btn-primary">Buscar Alternativas</button>
+                    <input type="text" id="ingredient-input" placeholder="Escribe un ingrediente, p. ej. mantequilla, azúcar, leche…">
+                    <button id="search-substitute-btn" class="btn btn-primary">Buscar</button>
                   </div>
                   <div class="quick-suggestions">
                     <span class="suggestion-label">Populares:</span>
@@ -195,143 +296,76 @@
                 <div class="results-header">
                   <h3 id="substitute-title"></h3>
                 </div>
-                <div id="substitutes-list" class="substitutes-grid">
-                  <!-- Alternativas se llenan aquí -->
-                </div>
+                <div id="substitutes-list" class="substitutes-grid"></div>
               </div>
 
-              <div id="assistant-placeholder" class="placeholder">
-                <span class="placeholder-icon">🤖</span>
-                <p>Introduce un ingrediente para descubrir alternativas saludables impulsadas por IA</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Import Diet Section -->
-          <section id="import-section" class="section">
-            <div class="section-header">
-              <h2>Importar Plan de Dieta</h2>
-              <p class="section-subtitle">Pega tu plan semanal en cualquier idioma para importar comidas automáticamente</p>
-            </div>
-
-            <div class="import-container">
-              <div class="import-input card">
-                <div class="card-header">
-                  <h3>Pega tu Plan de Dieta</h3>
-                  <span id="detected-language" class="lang-badge hidden"></span>
-                </div>
-                <div class="card-body">
-                  <div class="form-group">
-                    <label for="diet-text">Introduce tu plan como texto plano</label>
-                    <textarea id="diet-text" rows="12" placeholder="Soporta inglés, español, portugués, francés, alemán, italiano y neerlandés
-
-Ejemplo (Español):
-Lunes:
-Desayuno: Avena con frutas
-Almuerzo: Ensalada de pollo a la plancha
-Cena: Salmón con verduras al horno
-Colación: Yogur griego
-
-Ejemplo (Portugués):
-Segunda-feira:
-Café da manhã: Aveia com frutas
-Almoço: Salada de frango
-Jantar: Salmão com legumes"></textarea>
-                  </div>
-                  <div class="import-format-help">
-                    <button type="button" class="help-toggle-btn" id="format-help-toggle">
-                      <span>💡</span> Formatos e idiomas soportados
-                    </button>
-                    <div id="format-help" class="format-help hidden">
-                      <div class="help-content">
-                        <p><strong>Idiomas soportados:</strong> Inglés, Español, Portugués, Francés, Alemán, Italiano, Neerlandés</p>
-                        <p><strong>El analizador detecta automáticamente el idioma.</strong></p>
-                        <ul>
-                          <li><strong>Nombres de días:</strong> Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo</li>
-                          <li><strong>Tipos de comida:</strong></li>
-                          <li>Desayuno / Café da manhã / Petit déjeuner</li>
-                          <li>Media mañana / Lanche da manhã</li>
-                          <li>Almuerzo / Almoço / Déjeuner</li>
-                          <li>Merienda / Lanche da tarde / Goûter</li>
-                          <li>Cena / Jantar / Dîner</li>
-                          <li>Colación / Lanche / Collation</li>
-                          <li><strong>Ingredientes:</strong> ingredientes: pollo, arroz, verduras</li>
-                        </ul>
-                        <p class="help-example">
-                          <strong>Ejemplo en español:</strong><br>
-                          Lunes:<br>
-                          Desayuno: Avena con frutas<br>
-                          Media mañana: Yogur natural<br>
-                          Almuerzo: Pollo a la plancha con ensalada<br>
-                          Merienda: Frutos secos<br>
-                          Cena: Salmón con verduras al horno
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="import-actions">
-                    <button type="button" id="parse-diet-btn" class="btn btn-primary">Analizar Plan de Dieta</button>
-                    <button type="button" id="clear-diet-btn" class="btn btn-secondary">Limpiar</button>
-                  </div>
-                </div>
-              </div>
-
-              <div id="parse-log" class="parse-log hidden"></div>
-
-              <div id="import-preview" class="import-preview hidden">
-                <div class="preview-header">
-                  <h3>Vista Previa de Comidas Analizadas</h3>
-                  <span id="meals-count" class="meals-count"></span>
-                </div>
-                <div id="preview-content" class="preview-content">
-                  <!-- Vista previa se llena aquí -->
-                </div>
-                <div class="preview-actions">
-                  <button type="button" id="import-meals-btn" class="btn btn-primary" disabled>
-                    <span>📥</span> Importar Comidas
-                  </button>
-                  <button type="button" id="import-shopping-btn" class="btn btn-secondary" disabled>
-                    <span>🛒</span> Importar + Lista de Compra
-                  </button>
-                  <button type="button" id="cancel-import-btn" class="btn btn-outline">Cancelar</button>
-                </div>
-              </div>
-
-              <div id="import-placeholder" class="placeholder">
-                <span class="placeholder-icon">📥</span>
-                <p>Pega tu plan de dieta semanal arriba y haz clic en "Analizar Plan de Dieta" para previsualizar las comidas antes de importar</p>
+              <div id="assistant-placeholder" class="placeholder-card">
+                <svg class="placeholder-icon" width="36" height="36" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                </svg>
+                <p>Introduce un ingrediente para descubrir sustitutos saludables</p>
               </div>
             </div>
           </section>
+
         </main>
+
+        <!-- Navegación móvil inferior -->
+        <nav class="mobile-nav">
+          <button class="mobile-nav-item active" data-section="diet">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+            </svg>
+            <span class="nav-label" id="nav-label-diet-mobile">Mi Plan</span>
+          </button>
+          <button class="mobile-nav-item" data-section="import">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+            <span class="nav-label" id="nav-label-import-mobile">Importar</span>
+          </button>
+          <button class="mobile-nav-item" data-section="shopping">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+            </svg>
+            <span class="nav-label" id="nav-label-shopping-mobile">Compra</span>
+          </button>
+          <button class="mobile-nav-item" data-section="assistant">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+            </svg>
+            <span class="nav-label" id="nav-label-assistant-mobile">IA</span>
+          </button>
+        </nav>
+
       </div>
 
-      <!-- Add Shopping Item Modal -->
+      <!-- Modal: añadir artículo -->
       <div id="item-modal" class="modal hidden">
         <div class="modal-overlay"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h3>Añadir Artículo de Compra</h3>
-            <button class="modal-close">&times;</button>
+            <h3>Añadir artículo</h3>
+            <button class="modal-close" aria-label="Cerrar">&times;</button>
           </div>
           <form id="item-form" class="modal-body">
             <div class="form-group">
-              <label for="item-name">Nombre del Artículo</label>
-              <input type="text" id="item-name" placeholder="Ej. Manzanas Orgánicas" required>
+              <label for="item-name">Nombre del artículo</label>
+              <input type="text" id="item-name" placeholder="Ej. Manzanas, Arroz integral…" required>
             </div>
             <div class="form-group">
               <label for="item-quantity">Cantidad</label>
-              <input type="text" id="item-quantity" placeholder="Ej. 2 kg, 500g, 1 docena" value="1">
+              <input type="text" id="item-quantity" placeholder="Ej. 1 kg, 500 g, 2 unidades" value="1">
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Añadir Artículo</button>
+              <button type="button" class="btn btn-ghost modal-cancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Añadir artículo</button>
             </div>
           </form>
         </div>
       </div>
 
-      <!-- Toast Notifications -->
+      <!-- Notificaciones -->
       <div id="toast-container" class="toast-container"></div>
     </div>
     <script type="module" src="/main.js"></script>

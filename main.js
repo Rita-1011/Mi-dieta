@@ -62,44 +62,44 @@ const LANGUAGE_LABELS = {
 
 const UI_LABELS = {
   es: {
-    dietSectionTitle: 'Mi Dieta',
-    dietViewName: 'Mi Dieta',
-    shoppingTitle: 'Lista de la Compra',
+    dietSectionTitle: 'Mi Plan',
+    dietViewName: 'Mi Plan',
+    shoppingTitle: 'Lista de la compra',
     emptyTitle: '¡Bienvenido!',
-    emptyLine1: 'Aún no tienes ninguna dieta planificada.',
-    emptyLine2: 'Importa tu plan de alimentación semanal para empezar.',
-    emptyButton: 'Importar Dieta',
+    emptyLine1: 'Todavía no tienes ningún plan de alimentación.',
+    emptyLine2: 'Importa tu dieta semanal para empezar a organizarte.',
+    emptyButton: 'Importar dieta',
     addItem: 'Añadir',
     generateList: 'Generar desde comidas',
     filterAll: 'Todas',
     filterPending: 'Pendientes',
     filterCompleted: 'Completadas',
-    shoppingEmpty: 'Tu lista de la compra está vacía. Genera desde las comidas o añade artículos manualmente.',
-    navDiet: 'Mi Dieta',
-    navImport: 'Importar Dieta',
-    navShopping: 'Lista de la Compra',
+    shoppingEmpty: 'Tu lista de la compra está vacía. Genera los artículos desde las comidas o añade uno manualmente.',
+    navDiet: 'Mi Plan',
+    navImport: 'Importar dieta',
+    navShopping: 'Lista de la compra',
     navAssistant: 'Asistente IA',
     navImportMobile: 'Importar',
     navShoppingMobile: 'Compra',
     navAssistantMobile: 'IA'
   },
   en: {
-    dietSectionTitle: 'Mi Dieta',
-    dietViewName: 'Mi Dieta',
-    shoppingTitle: 'Lista de la Compra',
+    dietSectionTitle: 'Mi Plan',
+    dietViewName: 'Mi Plan',
+    shoppingTitle: 'Lista de la compra',
     emptyTitle: '¡Bienvenido!',
-    emptyLine1: 'Aún no tienes ninguna dieta planificada.',
-    emptyLine2: 'Importa tu plan de alimentación semanal para empezar.',
-    emptyButton: 'Importar Dieta',
+    emptyLine1: 'Todavía no tienes ningún plan de alimentación.',
+    emptyLine2: 'Importa tu dieta semanal para empezar a organizarte.',
+    emptyButton: 'Importar dieta',
     addItem: 'Añadir',
     generateList: 'Generar desde comidas',
     filterAll: 'Todas',
     filterPending: 'Pendientes',
     filterCompleted: 'Completadas',
-    shoppingEmpty: 'Tu lista de la compra está vacía. Genera desde las comidas o añade artículos manualmente.',
-    navDiet: 'Mi Dieta',
-    navImport: 'Importar Dieta',
-    navShopping: 'Lista de la Compra',
+    shoppingEmpty: 'Tu lista de la compra está vacía. Genera los artículos desde las comidas o añade uno manualmente.',
+    navDiet: 'Mi Plan',
+    navImport: 'Importar dieta',
+    navShopping: 'Lista de la compra',
     navAssistant: 'Asistente IA',
     navImportMobile: 'Importar',
     navShoppingMobile: 'Compra',
@@ -319,7 +319,7 @@ function showMainApp() {
   $('#main-app').classList.remove('hidden');
 
   const displayName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Usuario';
-  $('#user-name').textContent = `Hola, ${displayName}`;
+  $('#user-name').textContent = displayName;
 
   loadAllData();
 }
@@ -1306,6 +1306,14 @@ function setupImport() {
   const cancelBtn = $('#cancel-import-btn');
   const langBadge = $('#detected-language');
 
+  const helpToggle = $('#format-help-toggle');
+  const helpPanel = $('#format-help');
+  if (helpToggle && helpPanel) {
+    helpToggle.addEventListener('click', () => {
+      helpPanel.classList.toggle('hidden');
+    });
+  }
+
   parseBtn.addEventListener('click', () => {
     const text = dietText.value.trim();
     if (!text) {
@@ -1367,7 +1375,7 @@ function setupImport() {
     if (parsedMeals.length === 0) return;
 
     importBtn.disabled = true;
-    importBtn.innerHTML = '<span>\u23f3</span> Importando...';
+    importBtn.innerHTML = 'Importando…';
 
     try {
       const mealsToInsert = parsedMeals.map(meal => ({
@@ -1389,8 +1397,7 @@ function setupImport() {
       parseLog.length = 0;
       $('#import-preview').classList.add('hidden');
       $('#import-placeholder').classList.remove('hidden');
-      importBtn.innerHTML = '<span>\uD83D\uDCE5</span> Importar Comidas';
-      importShoppingBtn.disabled = true;
+      importBtn.innerHTML = 'Importar comidas';
       const langBadge = $('#detected-language');
       if (langBadge) langBadge.classList.add('hidden');
 
@@ -1402,7 +1409,7 @@ function setupImport() {
       console.error('Error de importación:', error);
       showToast('Error al importar comidas. Por favor, intenta de nuevo.', 'error');
       importBtn.disabled = false;
-      importBtn.innerHTML = '<span>\uD83D\uDCE5</span> Importar Comidas';
+      importBtn.innerHTML = 'Importar comidas';
     }
   });
 
@@ -1410,7 +1417,7 @@ function setupImport() {
     if (parsedMeals.length === 0) return;
 
     importShoppingBtn.disabled = true;
-    importShoppingBtn.innerHTML = '<span>\u23f3</span> Importando...';
+    importShoppingBtn.innerHTML = 'Importando…';
 
     try {
       const mealsToInsert = parsedMeals.map(meal => ({
@@ -1471,16 +1478,14 @@ function setupImport() {
       parseLog.length = 0;
       $('#import-preview').classList.add('hidden');
       $('#import-placeholder').classList.remove('hidden');
-      importShoppingBtn.innerHTML = '<span>\uD83D\uDCE5</span> Importar + Lista de Compra';
-      importBtn.disabled = true;
-      const langBadge = $('#detected-language');
+      importShoppingBtn.innerHTML = 'Importar + lista de la compra';
       if (langBadge) langBadge.classList.add('hidden');
 
     } catch (error) {
       console.error('Error de importación:', error);
       showToast('Error al importar. Por favor, intenta de nuevo.', 'error');
       importShoppingBtn.disabled = false;
-      importShoppingBtn.innerHTML = '<span>\uD83D\uDCE5</span> Importar + Lista de Compra';
+      importShoppingBtn.innerHTML = 'Importar + lista de la compra';
     }
   });
 }
