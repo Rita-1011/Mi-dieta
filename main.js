@@ -1315,55 +1315,36 @@ function renderPreview(plan) {
 }
 
 // =====================
-// AI import helpers
+// Import helpers
 // =====================
-async function callParseDiet(text) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/parse-diet`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'apikey': SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify({ text }),
-  });
-
-  const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || `Error del servidor (${res.status})`);
-  return data;
-}
-
-function normalizePlanToMeals(plan) {
-  const MEAL_TYPE_MAP = {
-    breakfast: 'breakfast',
-    morning_snack: 'snack',
-    lunch: 'lunch',
-    snack: 'snack',
-    afternoon_snack: 'snack',
-    dinner: 'dinner',
+function flatMealsToPlan(flatMeals) {
+  const DAY_LABELS_ES = {
+    monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
+    thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo'
   };
-  const DAY_MAP = {};
-  DAYS.forEach((d, i) => { DAY_MAP[d] = d; });
-  // day_a → monday, day_b → tuesday …
-  'abcdefg'.split('').forEach((c, i) => { DAY_MAP[`day_${c}`] = DAYS[i] || `day_${c}`; });
-
-  const result = [];
-  for (const dayObj of (plan.days || [])) {
-    const day = DAY_MAP[dayObj.day] ?? dayObj.day;
-    for (const meal of (dayObj.meals || [])) {
-      result.push({
-        day_of_week: day,
-        meal_type: MEAL_TYPE_MAP[meal.type] || 'snack',
-        name: meal.name || '',
-        description: meal.description || null,
-        ingredients: meal.ingredients || [],
-      });
-    }
+  const dayMap = {};
+  for (const meal of flatMeals) {
+    const d = meal.day_of_week;
+    if (!dayMap[d]) dayMap[d] = [];
+    dayMap[d].push({
+      type: meal.meal_type,
+      name: meal.name,
+      description: meal.description || null,
+      ingredients: meal.ingredients || []
+    });
   }
-  return result;
+  return {
+    title: null,
+    period: null,
+    planType: 'weekly',
+    language: currentLanguage,
+    days: DAYS.filter(d => dayMap[d]?.length).map(d => ({
+      day: d,
+      label: DAY_LABELS_ES[d] || d,
+      meals: dayMap[d]
+    })),
+    warnings: []
+  };
 }
 
 function renderParseLog() {
@@ -1409,52 +1390,37 @@ function setupImport() {
     });
   }
 
-  parseBtn.addEventListener('click', async () => {
+  parseBtn.addEventListener('click', () => {
     const text = dietText.value.trim();
     if (!text) {
       showToast('Por favor, introduce un plan de dieta para analizar', 'error');
       return;
     }
 
-    parseBtn.disabled = true;
-    parseBtn.textContent = 'Analizando con IA…';
+    parsedMeals = parseDietPlan(text);
 
-    try {
-      parsedPlan = await callParseDiet(text);
-      parsedMeals = normalizePlanToMeals(parsedPlan);
-
-      if (parsedMeals.length === 0) {
-        showToast('No se encontraron comidas en el plan. Revisa el formato.', 'error');
-        importBtn.disabled = true;
-        importShoppingBtn.disabled = true;
-        return;
-      }
-
-      renderPreview(parsedPlan);
-      $('#meals-count').textContent = `${parsedMeals.length} comidas`;
-      $('#import-preview').classList.remove('hidden');
-      $('#import-placeholder').classList.add('hidden');
-      importBtn.disabled = false;
-      importShoppingBtn.disabled = false;
-
-      if (langBadge && parsedPlan.language) {
-        langBadge.textContent = LANGUAGE_LABELS[parsedPlan.language] || parsedPlan.language.toUpperCase();
-        langBadge.classList.remove('hidden');
-        currentLanguage = parsedPlan.language;
-      }
-
-      if (parsedPlan.warnings?.length) {
-        showToast(`${parsedMeals.length} comidas detectadas · ${parsedPlan.warnings.length} advertencia(s)`, 'info');
-      } else {
-        showToast(`${parsedMeals.length} comidas detectadas con éxito`, 'success');
-      }
-    } catch (err) {
-      console.error('Error analizando plan:', err);
-      showToast(err.message || 'Error al analizar el plan de dieta.', 'error');
-    } finally {
-      parseBtn.disabled = false;
-      parseBtn.textContent = 'Analizar plan';
+    if (parsedMeals.length === 0) {
+      importBtn.disabled = true;
+      importShoppingBtn.disabled = true;
+      return;
     }
+
+    parsedPlan = flatMealsToPlan(parsedMeals);
+    renderPreview(parsedPlan);
+    $('#meals-count').textContent = `${parsedMeals.length} comidas`;
+    $('#import-preview').classList.remove('hidden');
+    $('#import-placeholder').classList.add('hidden');
+    importBtn.disabled = false;
+    importShoppingBtn.disabled = false;
+
+    const lang = getLanguage();
+    if (langBadge) {
+      langBadge.textContent = LANGUAGE_LABELS[lang] || lang;
+      langBadge.classList.remove('hidden');
+    }
+
+    showToast(`Analizadas ${parsedMeals.length} comidas de tu plan (${LANGUAGE_LABELS[lang] || lang})`, 'success');
+    renderParseLog();
   });
 
   clearBtn.addEventListener('click', resetImportUI);
