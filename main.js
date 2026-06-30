@@ -1512,8 +1512,9 @@ function setupMealManagement() {
   $$('#confirm-modal .modal-close, #confirm-modal .confirm-cancel').forEach(b => b.addEventListener('click', closeConfirm));
   $('#confirm-modal .modal-overlay')?.addEventListener('click', closeConfirm);
   $('#confirm-ok').addEventListener('click', async () => {
+    const cb = confirmCallback;
     closeConfirm();
-    if (confirmCallback) { await confirmCallback(); confirmCallback = null; }
+    if (cb) await cb();
   });
 
   // Import confirm modal
