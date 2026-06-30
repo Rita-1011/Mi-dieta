@@ -924,6 +924,7 @@ function showSubstitutes(ingredient) {
 // Importar Dieta (Multilingüe)
 // =====================
 let parsedMeals = [];
+let parsedPlan = null;
 const parseLog = [];
 
 function logParse(level, message) {
@@ -1238,51 +1239,131 @@ function parseDietPlan(text) {
   return parsedMealsList;
 }
 
-function renderPreview(mealsList) {
+function renderPreview(plan) {
   const container = $('#preview-content');
 
-  if (mealsList.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>No se pudieron analizar comidas del texto.</p>
-        <p class="empty-hint">Asegúrate de incluir nombres de días y tipos de comida en un idioma soportado (EN, ES, PT, FR, DE, IT, NL)</p>
-      </div>
-    `;
+  if (!plan?.days?.length) {
+    container.innerHTML = `<div class="empty-state"><p>No se encontraron comidas en el plan analizado.</p></div>`;
     return;
   }
 
-  const lang = getLanguage();
-  const dayLabels = DAY_LABELS[lang] || DAY_LABELS.en;
-  const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
+  const MEAL_LABELS = {
+    breakfast: 'Desayuno',
+    morning_snack: 'Media mañana',
+    lunch: 'Almuerzo',
+    snack: 'Merienda',
+    dinner: 'Cena'
+  };
+  const MEAL_CLASS = {
+    breakfast: 'breakfast', morning_snack: 'snack',
+    lunch: 'lunch', snack: 'snack', dinner: 'dinner'
+  };
 
-  const mealsByDay = {};
-  DAYS.forEach(day => mealsByDay[day] = []);
-  mealsList.forEach(meal => {
-    if (mealsByDay[meal.day_of_week]) {
-      mealsByDay[meal.day_of_week].push(meal);
-    }
+  let html = '';
+
+  // Plan meta bar
+  if (plan.title || plan.period) {
+    html += `<div class="preview-plan-meta">`;
+    if (plan.title) html += `<span class="preview-plan-title">${plan.title}</span>`;
+    if (plan.period) html += `<span class="preview-plan-period">${plan.period}</span>`;
+    html += `</div>`;
+  }
+
+  // Warnings
+  if (plan.warnings?.length) {
+    html += `<div class="preview-warnings">`;
+    plan.warnings.forEach(w => {
+      html += `<div class="preview-warning"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>${w}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Days — skip days with no meals
+  plan.days.filter(d => d.meals?.length).forEach(dayObj => {
+    html += `<div class="preview-day">`;
+    html += `<div class="preview-day-header"><h4>${dayObj.label || dayObj.day}</h4></div>`;
+    html += `<div class="preview-meals-list">`;
+
+    dayObj.meals.forEach(meal => {
+      const label = MEAL_LABELS[meal.type] || meal.type;
+      const cls = MEAL_CLASS[meal.type] || 'snack';
+      html += `<div class="preview-meal-entry">`;
+      html += `<span class="preview-meal-type ${cls}">${label}</span>`;
+      html += `<div class="preview-meal-detail">`;
+
+      // Show name only if it differs from the type label
+      const mealName = meal.name?.trim();
+      if (mealName && mealName.toLowerCase() !== label.toLowerCase()) {
+        html += `<p class="preview-meal-name">${mealName}</p>`;
+      }
+
+      if (meal.ingredients?.length) {
+        html += `<ul class="preview-ingredients">`;
+        meal.ingredients.forEach(ing => { html += `<li>${ing}</li>`; });
+        html += `</ul>`;
+      } else if (meal.description) {
+        html += `<p class="preview-meal-desc">${meal.description}</p>`;
+      }
+
+      html += `</div></div>`;
+    });
+
+    html += `</div></div>`;
   });
 
-  const html = Object.entries(mealsByDay)
-    .filter(([day, dayMeals]) => dayMeals.length > 0)
-    .map(([day, dayMeals]) => `
-      <div class="preview-day">
-        <div class="preview-day-header">
-          <h4>${dayLabels[day] || day}</h4>
-          <span class="preview-day-count">${dayMeals.length} comida${dayMeals.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="preview-meals">
-          ${dayMeals.map(meal => `
-            <div class="preview-meal">
-              <span class="preview-meal-type ${meal.meal_type}">${mealTypeLabels[meal.meal_type] || meal.meal_type}</span>
-              <span class="preview-meal-name">${meal.name}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-
   container.innerHTML = html;
+}
+
+// =====================
+// AI import helpers
+// =====================
+async function callParseDiet(text) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/parse-diet`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ text }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `Error del servidor (${res.status})`);
+  return data;
+}
+
+function normalizePlanToMeals(plan) {
+  const MEAL_TYPE_MAP = {
+    breakfast: 'breakfast',
+    morning_snack: 'snack',
+    lunch: 'lunch',
+    snack: 'snack',
+    afternoon_snack: 'snack',
+    dinner: 'dinner',
+  };
+  const DAY_MAP = {};
+  DAYS.forEach((d, i) => { DAY_MAP[d] = d; });
+  // day_a → monday, day_b → tuesday …
+  'abcdefg'.split('').forEach((c, i) => { DAY_MAP[`day_${c}`] = DAYS[i] || `day_${c}`; });
+
+  const result = [];
+  for (const dayObj of (plan.days || [])) {
+    const day = DAY_MAP[dayObj.day] ?? dayObj.day;
+    for (const meal of (dayObj.meals || [])) {
+      result.push({
+        day_of_week: day,
+        meal_type: MEAL_TYPE_MAP[meal.type] || 'snack',
+        name: meal.name || '',
+        description: meal.description || null,
+        ingredients: meal.ingredients || [],
+      });
+    }
+  }
+  return result;
 }
 
 function renderParseLog() {
@@ -1328,37 +1409,52 @@ function setupImport() {
     });
   }
 
-  parseBtn.addEventListener('click', () => {
+  parseBtn.addEventListener('click', async () => {
     const text = dietText.value.trim();
     if (!text) {
       showToast('Por favor, introduce un plan de dieta para analizar', 'error');
       return;
     }
 
-    parsedMeals = parseDietPlan(text);
+    parseBtn.disabled = true;
+    parseBtn.textContent = 'Analizando con IA…';
 
-    if (parsedMeals.length === 0) {
-      importBtn.disabled = true;
-      importShoppingBtn.disabled = true;
-      return;
+    try {
+      parsedPlan = await callParseDiet(text);
+      parsedMeals = normalizePlanToMeals(parsedPlan);
+
+      if (parsedMeals.length === 0) {
+        showToast('No se encontraron comidas en el plan. Revisa el formato.', 'error');
+        importBtn.disabled = true;
+        importShoppingBtn.disabled = true;
+        return;
+      }
+
+      renderPreview(parsedPlan);
+      $('#meals-count').textContent = `${parsedMeals.length} comidas`;
+      $('#import-preview').classList.remove('hidden');
+      $('#import-placeholder').classList.add('hidden');
+      importBtn.disabled = false;
+      importShoppingBtn.disabled = false;
+
+      if (langBadge && parsedPlan.language) {
+        langBadge.textContent = LANGUAGE_LABELS[parsedPlan.language] || parsedPlan.language.toUpperCase();
+        langBadge.classList.remove('hidden');
+        currentLanguage = parsedPlan.language;
+      }
+
+      if (parsedPlan.warnings?.length) {
+        showToast(`${parsedMeals.length} comidas detectadas · ${parsedPlan.warnings.length} advertencia(s)`, 'info');
+      } else {
+        showToast(`${parsedMeals.length} comidas detectadas con éxito`, 'success');
+      }
+    } catch (err) {
+      console.error('Error analizando plan:', err);
+      showToast(err.message || 'Error al analizar el plan de dieta.', 'error');
+    } finally {
+      parseBtn.disabled = false;
+      parseBtn.textContent = 'Analizar plan';
     }
-
-    $('#meals-count').textContent = `${parsedMeals.length} comidas`;
-    renderPreview(parsedMeals);
-
-    $('#import-preview').classList.remove('hidden');
-    $('#import-placeholder').classList.add('hidden');
-    importBtn.disabled = false;
-    importShoppingBtn.disabled = false;
-
-    const lang = getLanguage();
-    if (langBadge) {
-      langBadge.textContent = LANGUAGE_LABELS[lang] || lang;
-      langBadge.classList.remove('hidden');
-    }
-
-    showToast(`Analizadas ${parsedMeals.length} comidas de tu plan (${LANGUAGE_LABELS[lang] || lang})`, 'success');
-    renderParseLog();
   });
 
   clearBtn.addEventListener('click', resetImportUI);
@@ -1468,6 +1564,7 @@ function resetImportUI() {
   const langBadge = $('#detected-language');
   $('#diet-text').value = '';
   parsedMeals = [];
+  parsedPlan = null;
   parseLog.length = 0;
   $('#import-preview').classList.add('hidden');
   $('#import-placeholder').classList.remove('hidden');
