@@ -1448,6 +1448,7 @@ function setupImport() {
     }
 
     parsedMeals = parseDietPlan(text);
+    console.log(parsedMeals);
 
     if (parsedMeals.length === 0) {
       importBtn.disabled = true;
