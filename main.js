@@ -1337,6 +1337,8 @@ function renderPreview(plan) {
     dayObj.meals.forEach(meal => {
       const label = MEAL_LABELS[meal.type] || meal.type;
       const cls = MEAL_CLASS[meal.type] || 'snack';
+      const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients : [];
+      console.log(`  meal ${meal.type} "${meal.name}" → ingredients:`, ingredients);
       html += `<div class="preview-meal-entry">`;
       html += `<span class="preview-meal-type ${cls}">${label}</span>`;
       html += `<div class="preview-meal-detail">`;
@@ -1347,9 +1349,9 @@ function renderPreview(plan) {
         html += `<p class="preview-meal-name">${mealName}</p>`;
       }
 
-      if (meal.ingredients?.length) {
+      if (ingredients.length > 0) {
         html += `<ul class="preview-ingredients">`;
-        meal.ingredients.forEach(ing => { html += `<li>${ing}</li>`; });
+        ingredients.forEach(ing => { html += `<li>${ing}</li>`; });
         html += `</ul>`;
       } else if (meal.description) {
         html += `<p class="preview-meal-desc">${meal.description}</p>`;
@@ -1380,7 +1382,7 @@ function flatMealsToPlan(flatMeals) {
       type: meal.meal_type,
       name: meal.name,
       description: meal.description || null,
-      ingredients: meal.ingredients || []
+      ingredients: Array.isArray(meal.ingredients) ? [...meal.ingredients] : []
     });
   }
   return {
@@ -1457,6 +1459,7 @@ function setupImport() {
     }
 
     parsedPlan = flatMealsToPlan(parsedMeals);
+    console.log('parsedPlan:', JSON.parse(JSON.stringify(parsedPlan)));
     renderPreview(parsedPlan);
     $('#meals-count').textContent = `${parsedMeals.length} comidas`;
     $('#import-preview').classList.remove('hidden');
