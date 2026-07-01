@@ -1112,11 +1112,18 @@ function detectLanguage(text) {
 }
 
 function parseDayName(line) {
-  const lowerLine = line.toLowerCase();
+  const trimmed = line.trim();
+  // Bullet and numbered list items are never day headers
+  if (/^[-•*]\s/.test(trimmed) || /^\d+[.)]\s/.test(trimmed)) return null;
+
+  const lowerLine = trimmed.toLowerCase();
   for (const [canonicalDay, translations] of Object.entries(MULTILANG_DAYS)) {
     for (const langNames of Object.values(translations)) {
       for (const name of langNames) {
-        if (lowerLine.includes(name.toLowerCase())) {
+        // Require whole-word match so short abbreviations like "mi", "fr", "sa", "do"
+        // don't match inside ingredient words like "mixta", "fruta", "ensalada", "cocido"
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp(`(?:^|\\s)${escaped}(?:\\s|[,;:.]|$)`, 'i').test(lowerLine)) {
           return canonicalDay;
         }
       }
