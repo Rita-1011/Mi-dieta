@@ -1176,59 +1176,102 @@ function parseDietPlan(text) {
   const lang = detectLanguage(text);
   currentLanguage = lang;
   const lines = text.split('\n');
+
   let currentDay = null;
-  const parsedMealsList = [];
+  let currentMealType = null;
+  let currentMealIngredients = [];
+  let currentMealName = '';
   let dayCount = 0;
+  const parsedMealsList = [];
 
   parseLog.length = 0;
   logParse('info', `Iniciando análisis del plan de dieta...`);
   logParse('info', `Longitud de entrada: ${text.length} caracteres`);
   logParse('info', `Procesando ${lines.length} líneas...`);
 
+  function commitMeal() {
+    if (!currentDay || !currentMealType) return;
+    const canonicalType = getCanonicalMealType(currentMealType);
+    parsedMealsList.push({
+      day_of_week: currentDay,
+      meal_type: canonicalType,
+      name: currentMealName,
+      description: null,
+      ingredients: [...currentMealIngredients],
+      language: lang
+    });
+    logParse('info', `Analizado: ${currentDay}/${canonicalType} -> "${currentMealName}" (${currentMealIngredients.length} ingredientes)`);
+    currentMealType = null;
+    currentMealIngredients = [];
+    currentMealName = '';
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
 
     if (!trimmed) continue;
-    if (trimmed.match(/^(plan|dieta|dieta semanal|semana|menú|menu|alimentación|nutrition|diet plan|weekly|week|#)/i)) {
-      logParse('info', `Omitiendo línea de título/encabezado ${i + 1}: "${trimmed}"`);
+
+    // Skip separator lines (runs of 3+ identical punctuation chars)
+    if (/^[-=*_~]{3,}$/.test(trimmed)) continue;
+
+    // Skip document title/header lines
+    if (trimmed.match(/^(plan|dieta|semana|menú|menu|alimentación|alimentacion|nutrition|diet plan|weekly|week|#)/i)) {
+      logParse('info', `Omitiendo encabezado ${i + 1}: "${trimmed}"`);
       continue;
     }
 
+    // Day name detection
     const day = parseDayName(trimmed);
     if (day) {
+      commitMeal();
       currentDay = day;
       dayCount++;
       logParse('info', `Día detectado en línea ${i + 1}: ${day} ("${trimmed}")`);
       continue;
     }
 
-    if (currentDay) {
-      const mealType = parseMealType(trimmed);
-      if (mealType) {
-        const ingredients = parseIngredients(trimmed);
-        const cleanName = cleanMealName(trimmed, mealType, currentDay);
-
-        const canonicalType = getCanonicalMealType(mealType);
-
-        const meal = {
-          day_of_week: currentDay,
-          meal_type: canonicalType,
-          name: cleanName,
-          description: null,
-          ingredients: ingredients || [],
-          language: lang
-        };
-
-        parsedMealsList.push(meal);
-        logParse('info', `Analizado: ${currentDay}/${canonicalType} -> "${cleanName}"`);
-      } else if (trimmed.length > 0) {
-        logParse('warn', `Omitiendo línea (sin tipo de comida o día): "${trimmed}"`);
-      }
-    } else {
+    if (!currentDay) {
       logParse('warn', `Línea ${i + 1} omitida (sin contexto de día aún): "${trimmed}"`);
+      continue;
+    }
+
+    // Bullet item (- item, • item, * item) — add to current meal's ingredients
+    const bulletMatch = trimmed.match(/^[-•*]\s+(.+)/);
+    if (bulletMatch && currentMealType) {
+      currentMealIngredients.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    // Numbered list item (1. item, 1) item)
+    const numberedMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
+    if (numberedMatch && currentMealType) {
+      currentMealIngredients.push(numberedMatch[1].trim());
+      continue;
+    }
+
+    // Meal type header
+    const mealType = parseMealType(trimmed);
+    if (mealType) {
+      commitMeal();
+      currentMealType = mealType;
+      currentMealName = cleanMealName(trimmed, mealType, currentDay) || trimmed;
+      // Inline ingredients on the same line (e.g., "Desayuno: pan, aceite")
+      const inlineIngredients = parseIngredients(trimmed);
+      if (inlineIngredients) currentMealIngredients = inlineIngredients;
+      continue;
+    }
+
+    // Unmatched non-bullet line while inside a meal → treat as plain ingredient
+    if (currentMealType) {
+      currentMealIngredients.push(trimmed);
+      logParse('info', `Línea ${i + 1} añadida como ingrediente de ${currentMealType}: "${trimmed}"`);
+    } else {
+      logParse('warn', `Línea ${i + 1} omitida: "${trimmed}"`);
     }
   }
+
+  commitMeal(); // flush the last meal
 
   logParse('info', `Análisis completo: ${parsedMealsList.length} comidas de ${dayCount} días (idioma: ${lang})`);
 
