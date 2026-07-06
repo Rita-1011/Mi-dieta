@@ -574,7 +574,9 @@ function updateDietView() {
             </div>
           </div>
           <div class="meal-name">${meal.name}</div>
-          ${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}
+          ${Array.isArray(meal.ingredients) && meal.ingredients.length > 0
+            ? `<ul class="preview-ingredients">${meal.ingredients.map(ing => `<li>${ing}</li>`).join('')}</ul>`
+            : meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}
         </div>
       `;
     }).join('');
