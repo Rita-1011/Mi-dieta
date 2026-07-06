@@ -573,10 +573,9 @@ function updateDietView() {
               </button>
             </div>
           </div>
-          <div class="meal-name">${meal.name}</div>
           ${Array.isArray(meal.ingredients) && meal.ingredients.length > 0
             ? `<ul class="preview-ingredients">${meal.ingredients.map(ing => `<li>${ing}</li>`).join('')}</ul>`
-            : meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}
+            : `<div class="meal-name">${meal.name}</div>${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}`}
         </div>
       `;
     }).join('');
@@ -1343,16 +1342,18 @@ function renderPreview(plan) {
       html += `<div class="preview-meal-entry">`;
       html += `<span class="preview-meal-type ${cls}">${label}</span>`;
       html += `<div class="preview-meal-detail">`;
-      const mealName = meal.name?.trim();
-      if (mealName && mealName.toLowerCase() !== label.toLowerCase()) {
-        html += `<p class="preview-meal-name">${mealName}</p>`;
-      }
       if (ingredients.length > 0) {
         html += `<ul class="preview-ingredients">`;
         ingredients.forEach(ing => { html += `<li>${ing}</li>`; });
         html += `</ul>`;
-      } else if (meal.description) {
-        html += `<p class="preview-meal-desc">${meal.description}</p>`;
+      } else {
+        const mealName = meal.name?.trim();
+        if (mealName && mealName.toLowerCase() !== label.toLowerCase()) {
+          html += `<p class="preview-meal-name">${mealName}</p>`;
+        }
+        if (meal.description) {
+          html += `<p class="preview-meal-desc">${meal.description}</p>`;
+        }
       }
       html += `</div></div>`;
     });
