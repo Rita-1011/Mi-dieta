@@ -1335,11 +1335,24 @@ function renderPreview(plan) {
     html += `<div class="preview-meals-list">`;
 
     dayObj.meals.forEach(meal => {
-      const json = JSON.stringify(meal, null, 2).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      html += `<div style="margin-bottom:12px;border:1px solid #ccc;padding:8px;border-radius:4px;">`;
-      html += `<strong style="display:block;margin-bottom:4px;">${meal.name || meal.type}</strong>`;
-      html += `<pre style="font-size:0.75rem;white-space:pre-wrap;word-break:break-all;margin:0;">${json}</pre>`;
-      html += `</div>`;
+      const label = MEAL_LABELS[meal.type] || meal.type;
+      const cls = MEAL_CLASS[meal.type] || 'snack';
+      const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients : [];
+      html += `<div class="preview-meal-entry">`;
+      html += `<span class="preview-meal-type ${cls}">${label}</span>`;
+      html += `<div class="preview-meal-detail">`;
+      const mealName = meal.name?.trim();
+      if (mealName && mealName.toLowerCase() !== label.toLowerCase()) {
+        html += `<p class="preview-meal-name">${mealName}</p>`;
+      }
+      if (ingredients.length > 0) {
+        html += `<ul class="preview-ingredients">`;
+        ingredients.forEach(ing => { html += `<li>${ing}</li>`; });
+        html += `</ul>`;
+      } else if (meal.description) {
+        html += `<p class="preview-meal-desc">${meal.description}</p>`;
+      }
+      html += `</div></div>`;
     });
 
     html += `</div></div>`;
