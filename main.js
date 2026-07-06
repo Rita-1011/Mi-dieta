@@ -795,7 +795,9 @@ function extractQtyAndName(text) {
 
 function extractShoppingIngredients(raw) {
   if (!raw || !raw.trim()) return [];
-  const trimmed = raw.trim();
+  // Strip leading bullet characters that the parser may not have caught when
+  // there is no space between the bullet and the content (e.g. "-4 almendras")
+  const trimmed = raw.trim().replace(/^[-•*]\s*/, '');
   const lower = trimmed.toLowerCase();
 
   for (const p of PROTECTED_PRODUCTS) {
