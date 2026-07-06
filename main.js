@@ -556,7 +556,9 @@ function updateDietView() {
     const dayMealsSorted = dayMeals;
 
     const mealsList = dayMealsSorted.map(meal => {
-      const mealTypeLabel = mealTypeLabels[meal.meal_type] || meal.meal_type;
+      const mealTypeLabel = meal.meal_type === 'snack' && meal.name
+        ? meal.name
+        : (mealTypeLabels[meal.meal_type] || meal.meal_type);
       return `
         <div class="diet-meal">
           <div class="meal-header">
