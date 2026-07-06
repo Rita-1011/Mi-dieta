@@ -761,6 +761,17 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// Normalizes an ingredient name to a stable grouping key.
+// Lowercases, strips diacritics, and trims so that "Salmón" and "Salmon"
+// (or any accent variation) map to the same key and are merged correctly.
+function normalizeIngredientKey(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
 function stripCookingMethod(text) {
   let result = text.trim();
   let changed = true;
@@ -850,7 +861,7 @@ function extractShoppingIngredients(raw) {
 function mergeShoppingIngredients(items) {
   const grouped = new Map();
   for (const item of items) {
-    const key = item.name.toLowerCase().trim();
+    const key = normalizeIngredientKey(item.name);
     if (!grouped.has(key)) grouped.set(key, { name: item.name, qtys: [] });
     grouped.get(key).qtys.push(item.qty);
   }
@@ -951,9 +962,9 @@ async function generateShoppingList() {
   shoppingItems = shoppingItems.filter(i => i.is_custom);
 
   const merged = collectShoppingIngredients(meals);
-  const existingCustomNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
+  const existingCustomNames = new Set(shoppingItems.map(i => normalizeIngredientKey(i.name)));
   const newItems = merged
-    .filter(item => !existingCustomNames.has(item.name.toLowerCase()))
+    .filter(item => !existingCustomNames.has(normalizeIngredientKey(item.name)))
     .map(item => ({
       user_id: currentUser.id,
       name: item.name,
@@ -1800,10 +1811,21 @@ function setupImport() {
         updateDietView();
         window.switchSection('diet');
 
+        // Clear previously generated items before inserting a fresh set,
+        // same as generateShoppingList does, to prevent stale entries mixing
+        // with items from the newly imported plan.
+        await supabase
+          .from('shopping_items')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('is_custom', false);
+        await loadShoppingItems();
+        const customOnly = shoppingItems.filter(i => i.is_custom);
+
         const merged = collectShoppingIngredients(parsedMeals);
-        const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
+        const existingCustomNames = new Set(customOnly.map(i => normalizeIngredientKey(i.name)));
         const newItems = merged
-          .filter(item => !existingNames.has(item.name.toLowerCase()))
+          .filter(item => !existingCustomNames.has(normalizeIngredientKey(item.name)))
           .map(item => ({
             user_id: currentUser.id,
             name: item.name,
