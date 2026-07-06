@@ -636,7 +636,7 @@ function renderShoppingList(filter = 'all') {
         <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="window.toggleShoppingItem('${item.id}', this.checked)">
         <div class="item-details">
           <span class="item-name">${item.name}</span>
-          <span class="item-quantity">${item.quantity}</span>
+          <span class="item-quantity">${item.quantity ?? ''}</span>
           ${item.is_custom ? '<span class="item-badge custom">Personalizado</span>' : '<span class="item-badge auto">Generado</span>'}
         </div>
       </div>
@@ -661,6 +661,7 @@ function setupShoppingList() {
   });
 
   $('#generate-list-btn').addEventListener('click', generateShoppingList);
+  $('#clear-list-btn').addEventListener('click', clearGeneratedShoppingItems);
   $('#add-item-btn').addEventListener('click', () => {
     $('#item-modal').classList.remove('hidden');
   });
@@ -858,26 +859,40 @@ function mergeShoppingIngredients(items) {
     let quantity;
 
     if (qtys.length === 0) {
+      // No quantity info at all — show count only when more than one occurrence
       const count = data.qtys.length;
-      quantity = count > 1 ? `${count}x` : '1';
+      quantity = count > 1 ? `${count}x` : null;
     } else {
       const parsed = qtys.map(q => {
         const m = q.match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|cl|dl)?$/i);
-        return m
-          ? { value: parseFloat(m[1].replace(',', '.')), unit: (m[2] || '').toLowerCase().replace('gr', 'g') }
-          : null;
+        if (!m) return null;
+        const value = parseFloat(m[1].replace(',', '.'));
+        if (!isFinite(value) || value < 0) return null;
+        return { value, unit: (m[2] || '').toLowerCase().replace('gr', 'g') };
       }).filter(Boolean);
 
-      if (parsed.length === qtys.length) {
+      if (parsed.length === qtys.length && parsed.length > 0) {
         const units = [...new Set(parsed.map(p => p.unit))];
         if (units.length === 1) {
-          const total = parsed.reduce((s, p) => s + p.value, 0);
-          quantity = units[0] ? `${total}${units[0]}` : `${total}`;
+          const total = Math.round(parsed.reduce((s, p) => s + p.value, 0) * 1000) / 1000;
+          if (total > 0) {
+            quantity = units[0]
+              ? `${total}${units[0]}`
+              : `${Math.round(total)}`;
+          } else {
+            quantity = null;
+          }
         } else {
-          quantity = qtys[0];
+          // Incompatible units — drop quantity to avoid incorrect values
+          quantity = null;
         }
       } else {
-        quantity = qtys[0];
+        // Some entries unparseable — use first valid raw value if positive
+        const firstValid = qtys.find(q => {
+          const m = q.match(/^(\d+(?:[.,]\d+)?)/);
+          return m && parseFloat(m[1]) > 0;
+        });
+        quantity = firstValid ?? null;
       }
     }
 
@@ -900,21 +915,55 @@ function collectShoppingIngredients(mealsArray) {
   return mergeShoppingIngredients(allItems);
 }
 
+async function clearGeneratedShoppingItems() {
+  const { error } = await supabase
+    .from('shopping_items')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('is_custom', false);
+
+  if (error) {
+    showToast('Error al limpiar la lista', 'error');
+    return;
+  }
+
+  showToast('Lista generada vaciada', 'success');
+  await loadShoppingItems();
+  const activeFilter = $('.filter-btn.active')?.dataset.filter || 'all';
+  renderShoppingList(activeFilter);
+}
+
 async function generateShoppingList() {
+  // Always delete previously generated items first to prevent stale data
+  const { error: deleteError } = await supabase
+    .from('shopping_items')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('is_custom', false);
+
+  if (deleteError) {
+    showToast('Error al actualizar la lista', 'error');
+    return;
+  }
+
+  shoppingItems = shoppingItems.filter(i => i.is_custom);
+
   const merged = collectShoppingIngredients(meals);
-  const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
+  const existingCustomNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
   const newItems = merged
-    .filter(item => !existingNames.has(item.name.toLowerCase()))
+    .filter(item => !existingCustomNames.has(item.name.toLowerCase()))
     .map(item => ({
       user_id: currentUser.id,
       name: item.name,
-      quantity: item.quantity,
+      quantity: item.quantity ?? null,
       completed: false,
       is_custom: false
     }));
 
   if (newItems.length === 0) {
-    showToast('No hay nuevos artículos para añadir desde las comidas', 'info');
+    showToast('No se encontraron ingredientes en el plan de comidas', 'info');
+    await loadShoppingItems();
+    renderShoppingList();
     return;
   }
 
@@ -925,7 +974,7 @@ async function generateShoppingList() {
   if (error) {
     showToast('Error al generar la lista', 'error');
   } else {
-    showToast(`¡Añadidos ${newItems.length} artículos!`, 'success');
+    showToast(`Lista actualizada con ${newItems.length} artículos`, 'success');
     await loadShoppingItems();
     renderShoppingList();
   }
