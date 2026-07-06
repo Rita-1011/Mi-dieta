@@ -530,7 +530,6 @@ function updateDietView() {
     }
   });
 
-  const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
   const mealIcons = {
     breakfast: '🌅',
     lunch: '🌞',
@@ -554,9 +553,7 @@ function updateDietView() {
     const mealCount = dayMeals.length;
     const emptySlot = mealCount === 0 ? `<div class="diet-meal empty-slot">${emptyTexts[lang] || emptyTexts.en}</div>` : '';
 
-    const dayMealsSorted = [...dayMeals].sort((a, b) => {
-      return mealTypeOrder.indexOf(a.meal_type) - mealTypeOrder.indexOf(b.meal_type);
-    });
+    const dayMealsSorted = dayMeals;
 
     const mealsList = dayMealsSorted.map(meal => {
       const mealTypeLabel = mealTypeLabels[meal.meal_type] || meal.meal_type;
