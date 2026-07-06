@@ -1201,8 +1201,8 @@ code {
 }
 
 .preview-ingredients {
-  margin: 2px 0 0 14px;
-  padding: 0;
+  margin: 2px 0 0 0;
+  padding: 0 0 0 18px;
   list-style: disc;
 }
 
