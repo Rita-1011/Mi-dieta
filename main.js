@@ -899,14 +899,7 @@ function setupAssistant() {
   });
 }
 
-function showSubstitutes(ingredient) {
-  const result = getSubstitutes(ingredient);
-
-  if (!result) {
-    showToast(`No se encontraron sustitutos para "${ingredient}". Prueba: mantequilla, azúcar, leche, huevos o harina.`, 'info');
-    return;
-  }
-
+function renderSubstitutes(result) {
   $('#substitute-title').textContent = `Alternativas para ${result.ingredient}`;
   $('#substitutes-list').innerHTML = result.substitutes.map(sub => `
     <div class="substitute-card">
@@ -915,9 +908,42 @@ function showSubstitutes(ingredient) {
       <p class="substitute-notes">${sub.notes}</p>
     </div>
   `).join('');
-
   $('#substitute-results').classList.remove('hidden');
   $('#assistant-placeholder').classList.add('hidden');
+}
+
+async function showSubstitutes(ingredient) {
+  const btn = $('#search-substitute-btn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Buscando…';
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-assistant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ ingredient }),
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    if (!result.ingredient || !Array.isArray(result.substitutes)) throw new Error('Invalid response');
+
+    renderSubstitutes(result);
+  } catch {
+    const fallback = getSubstitutes(ingredient);
+    if (!fallback) {
+      showToast(`No se encontraron sustitutos para "${ingredient}". Prueba: mantequilla, azúcar, leche, huevos o harina.`, 'info');
+    } else {
+      renderSubstitutes(fallback);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 // =====================
