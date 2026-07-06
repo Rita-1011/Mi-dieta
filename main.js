@@ -693,32 +693,225 @@ function setupShoppingList() {
   };
 }
 
-async function generateShoppingList() {
-  const allIngredients = new Map();
+// =====================
+// Extracción de ingredientes para la lista de la compra
+// =====================
 
-  meals.forEach(meal => {
-    (meal.ingredients || []).forEach(ingredient => {
-      const key = ingredient.toLowerCase().trim();
-      if (key) {
-        allIngredients.set(key, (allIngredients.get(key) || 0) + 1);
+const COOKING_METHOD_PATTERNS = [
+  'a la plancha', 'al horno', 'al vapor', 'al microondas',
+  'a la brasa', 'a la parrilla', 'a la cazuela', 'en papillote',
+  'en su jugo', 'a fuego lento',
+  'al curry', 'al ajillo', 'al pil pil', 'a la romana',
+  'con salsa verde', 'con salsa', 'en salsa', 'a la vinagreta',
+  'con especias', 'con hierbas aromáticas', 'con hierbas',
+  'hervido', 'hervida', 'hervidos', 'hervidas',
+  'frito', 'frita', 'fritos', 'fritas',
+  'asado', 'asada', 'asados', 'asadas',
+  'estofado', 'estofada', 'estofados', 'estofadas',
+  'guisado', 'guisada', 'guisados', 'guisadas',
+  'salteado', 'salteada', 'salteados', 'salteadas',
+  'marinado', 'marinada', 'marinados', 'marinadas',
+  'ahumado', 'ahumada', 'ahumados', 'ahumadas',
+  'gratinado', 'gratinada', 'gratinados', 'gratinadas',
+  'rebozado', 'rebozada', 'rebozados', 'rebozadas',
+  'empanado', 'empanada', 'empanados', 'empanadas',
+  'cocido', 'cocida', 'cocidos', 'cocidas',
+].sort((a, b) => b.length - a.length);
+
+const PROTECTED_PRODUCTS = [
+  'aceite de oliva virgen extra', 'aceite de oliva', 'aceite de girasol',
+  'leche de almendras', 'leche de avena', 'leche de soja', 'leche de coco',
+  'crema de cacahuete', 'crema de almendras',
+  'proteína de suero', 'proteína en polvo',
+  'atún al natural', 'atún en conserva',
+  'sardinas en conserva', 'caballa en conserva',
+  'jamón cocido', 'jamón serrano', 'jamón ibérico',
+  'pavo en lonchas', 'pavo cocido',
+  'queso fresco', 'queso cottage', 'queso rallado', 'queso de cabra', 'queso manchego',
+  'yogur natural', 'yogur griego', 'yogur de soja',
+  'pan integral', 'pan de molde', 'pan de centeno', 'pan de avena',
+  'tortitas de arroz', 'tortitas de maíz',
+  'bebida vegetal',
+  'hummus', 'tofu', 'tempeh', 'seitán',
+].sort((a, b) => b.length - a.length);
+
+const RECIPE_EXPANSIONS = {
+  'tortilla española': ['Huevos', 'Patata', 'Cebolla', 'Aceite de oliva'],
+  'tortilla de patatas': ['Huevos', 'Patata', 'Cebolla', 'Aceite de oliva'],
+  'tortilla de claras': ['Claras de huevo'],
+  'revuelto de claras': ['Claras de huevo'],
+  'ensalada mixta': ['Lechuga', 'Tomate', 'Cebolla'],
+  'ensalada verde': ['Lechuga', 'Pepino', 'Cebolla'],
+  'ensalada caprese': ['Tomate', 'Mozzarella', 'Albahaca'],
+};
+
+const RECIPE_PREFIXES = [
+  'revuelto de', 'revuelta de',
+  'ensalada de',
+  'crema de', 'sopa de', 'puré de', 'pure de',
+  'tortilla de',
+  'salteado de', 'salteada de',
+  'guiso de', 'estofado de',
+  'bowl de', 'wrap de', 'wok de',
+].sort((a, b) => b.length - a.length);
+
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function stripCookingMethod(text) {
+  let result = text.trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const method of COOKING_METHOD_PATTERNS) {
+      const escaped = method.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(?:,\\s*|\\s+)${escaped}\\s*$`, 'i');
+      const next = result.replace(regex, '').trim();
+      if (next !== result && next.length > 0) {
+        result = next;
+        changed = true;
+        break;
       }
-    });
-  });
-
-  const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
-  const newItems = [];
-
-  for (const [name, count] of allIngredients) {
-    if (!existingNames.has(name)) {
-      newItems.push({
-        user_id: currentUser.id,
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        quantity: count > 1 ? `${count}x` : '1',
-        completed: false,
-        is_custom: false
-      });
     }
   }
+  return result;
+}
+
+function extractQtyAndName(text) {
+  const m = text.match(/^(\d+(?:[.,]\d+)?)\s*(g|gr|kg|ml|l|cl|dl)?\s*(?:de\s+)?/i);
+  if (m && m[0].length < text.length) {
+    const value = m[1];
+    const unit = m[2] ? m[2].toLowerCase().replace('gr', 'g') : '';
+    return {
+      qty: unit ? `${value}${unit}` : value,
+      name: text.slice(m[0].length).trim()
+    };
+  }
+  return { qty: null, name: text.trim() };
+}
+
+function extractShoppingIngredients(raw) {
+  if (!raw || !raw.trim()) return [];
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+
+  for (const p of PROTECTED_PRODUCTS) {
+    if (lower === p || lower.startsWith(p + ' ') || lower.startsWith(p + ',')) {
+      return [{ name: capitalize(p), qty: null }];
+    }
+  }
+
+  for (const [recipe, ingredients] of Object.entries(RECIPE_EXPANSIONS)) {
+    if (lower === recipe || lower.startsWith(recipe + ' con ') || lower.startsWith(recipe + ' y ')) {
+      const extraStr = lower.slice(recipe.length).replace(/^\s*(con|y)\s*/i, '').trim();
+      const result = ingredients.map(i => ({ name: i, qty: null }));
+      if (extraStr) {
+        extraStr.split(/\s+(?:con|y)\s+/i).forEach(e => {
+          const cleaned = stripCookingMethod(e.trim());
+          if (cleaned) result.push({ name: capitalize(cleaned), qty: null });
+        });
+      }
+      return result;
+    }
+  }
+
+  const { qty, name: nameStr } = extractQtyAndName(trimmed);
+  const lowerName = nameStr.toLowerCase();
+
+  for (const prefix of RECIPE_PREFIXES) {
+    if (lowerName.startsWith(prefix)) {
+      const remainder = nameStr.slice(prefix.length).trim();
+      const parts = remainder.split(/\s+(?:con|y)\s+/i)
+        .map(p => stripCookingMethod(p.trim()))
+        .filter(Boolean);
+      if (parts.length > 0) return parts.map(p => ({ name: capitalize(p), qty: null }));
+    }
+  }
+
+  if (/\s+con\s+/i.test(nameStr)) {
+    const parts = nameStr.split(/\s+con\s+/i);
+    if (parts.length > 1) {
+      return parts
+        .map(p => stripCookingMethod(p.trim()))
+        .filter(Boolean)
+        .map(p => ({ name: capitalize(p), qty: null }));
+    }
+  }
+
+  const cleanName = stripCookingMethod(nameStr);
+  return cleanName ? [{ name: capitalize(cleanName), qty }] : [];
+}
+
+function mergeShoppingIngredients(items) {
+  const grouped = new Map();
+  for (const item of items) {
+    const key = item.name.toLowerCase().trim();
+    if (!grouped.has(key)) grouped.set(key, { name: item.name, qtys: [] });
+    grouped.get(key).qtys.push(item.qty);
+  }
+
+  const result = [];
+  for (const [, data] of grouped) {
+    const qtys = data.qtys.filter(Boolean);
+    let quantity;
+
+    if (qtys.length === 0) {
+      const count = data.qtys.length;
+      quantity = count > 1 ? `${count}x` : '1';
+    } else {
+      const parsed = qtys.map(q => {
+        const m = q.match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|cl|dl)?$/i);
+        return m
+          ? { value: parseFloat(m[1].replace(',', '.')), unit: (m[2] || '').toLowerCase().replace('gr', 'g') }
+          : null;
+      }).filter(Boolean);
+
+      if (parsed.length === qtys.length) {
+        const units = [...new Set(parsed.map(p => p.unit))];
+        if (units.length === 1) {
+          const total = parsed.reduce((s, p) => s + p.value, 0);
+          quantity = units[0] ? `${total}${units[0]}` : `${total}`;
+        } else {
+          quantity = qtys[0];
+        }
+      } else {
+        quantity = qtys[0];
+      }
+    }
+
+    result.push({ name: data.name, quantity });
+  }
+
+  return result;
+}
+
+function collectShoppingIngredients(mealsArray) {
+  const allItems = [];
+  for (const meal of mealsArray) {
+    const sources = (meal.ingredients && meal.ingredients.length > 0)
+      ? meal.ingredients
+      : (meal.name ? [meal.name] : []);
+    for (const src of sources) {
+      allItems.push(...extractShoppingIngredients(src));
+    }
+  }
+  return mergeShoppingIngredients(allItems);
+}
+
+async function generateShoppingList() {
+  const merged = collectShoppingIngredients(meals);
+  const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
+  const newItems = merged
+    .filter(item => !existingNames.has(item.name.toLowerCase()))
+    .map(item => ({
+      user_id: currentUser.id,
+      name: item.name,
+      quantity: item.quantity,
+      completed: false,
+      is_custom: false
+    }));
 
   if (newItems.length === 0) {
     showToast('No hay nuevos artículos para añadir desde las comidas', 'info');
@@ -1556,27 +1749,17 @@ function setupImport() {
         updateDietView();
         window.switchSection('diet');
 
-        const allIngredients = new Map();
-        parsedMeals.forEach(meal => {
-          (meal.ingredients || []).forEach(ingredient => {
-            const key = ingredient.toLowerCase().trim();
-            if (key) allIngredients.set(key, (allIngredients.get(key) || 0) + 1);
-          });
-        });
-
+        const merged = collectShoppingIngredients(parsedMeals);
         const existingNames = new Set(shoppingItems.map(i => i.name.toLowerCase()));
-        const newItems = [];
-        for (const [name, count] of allIngredients) {
-          if (!existingNames.has(name)) {
-            newItems.push({
-              user_id: currentUser.id,
-              name: name.charAt(0).toUpperCase() + name.slice(1),
-              quantity: count > 1 ? `${count}x` : '1',
-              completed: false,
-              is_custom: false
-            });
-          }
-        }
+        const newItems = merged
+          .filter(item => !existingNames.has(item.name.toLowerCase()))
+          .map(item => ({
+            user_id: currentUser.id,
+            name: item.name,
+            quantity: item.quantity,
+            completed: false,
+            is_custom: false
+          }));
 
         if (newItems.length > 0) {
           const { error: shopError } = await supabase.from('shopping_items').insert(newItems);
