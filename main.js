@@ -979,7 +979,9 @@ function normalizeIngredientKey(name) {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .trim();
+    .trim()
+    .replace(/[.,;:!?]+$/, '')  // strip trailing punctuation left by parsers
+    .trim();                    // re-trim in case punctuation had surrounding spaces
 }
 
 function stripCookingMethod(text) {
@@ -1002,6 +1004,13 @@ function stripCookingMethod(text) {
 }
 
 function extractQtyAndName(text) {
+  // Range notation like "3-4" or "2-3g": the range is an imprecise amount, so
+  // we keep the ingredient name and emit qty=null (mergeShoppingIngredients will
+  // count occurrences instead of summing a wrong number).
+  const rangeM = text.match(/^(\d+(?:[.,]\d+)?)-(\d+(?:[.,]\d+)?)\s*(g|gr|kg|ml|l|cl|dl)?\s*(?:de\s+)?/i);
+  if (rangeM && rangeM[0].length < text.length) {
+    return { qty: null, name: text.slice(rangeM[0].length).trim() };
+  }
   const m = text.match(/^(\d+(?:[.,]\d+)?)\s*(g|gr|kg|ml|l|cl|dl)?\s*(?:de\s+)?/i);
   if (m && m[0].length < text.length) {
     const value = m[1];
@@ -1055,12 +1064,18 @@ function extractShoppingIngredients(raw) {
   }
 
   if (/\s+con\s+/i.test(nameStr)) {
-    const parts = nameStr.split(/\s+con\s+/i);
-    if (parts.length > 1) {
-      return parts
-        .map(p => stripCookingMethod(p.trim()))
-        .filter(Boolean)
-        .map(p => ({ name: capitalize(p), qty: null }));
+    const conParts = nameStr.split(/\s+con\s+/i);
+    if (conParts.length > 1) {
+      const result = [];
+      for (const cp of conParts) {
+        // Each part produced by "con" may itself be "X y Y" — split further
+        // so compound right-hand expressions yield individual ingredients.
+        for (const yp of cp.split(/\s+y\s+/i)) {
+          const cleaned = stripCookingMethod(yp.trim());
+          if (cleaned) result.push({ name: capitalize(cleaned), qty: null });
+        }
+      }
+      return result;
     }
   }
 
