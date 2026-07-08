@@ -168,6 +168,28 @@ Ejemplo:
   "Desayuno todos los días: Tostadas con aguacate"
   → Genera 7 entradas idénticas, una por cada día de la semana
 
+## ALTERNATIVAS DENTRO DE UNA TOMA CONECTADAS CON "O"
+
+Cuando un plato o línea contiene la partícula "o" conectando dos alternativas:
+
+CASO A — El "o" separa dos platos principales completos (cada parte es un plato en sí misma):
+  Texto: "Cena: Merluza a la plancha o pollo al horno, con guarnición de verduras"
+  → Crea DOS entradas con el mismo meal_type:
+    "name": "Cena - Opción A", "ingredients": ["Merluza a la plancha", "Guarnición de verduras"]
+    "name": "Cena - Opción B", "ingredients": ["Pollo al horno", "Guarnición de verduras"]
+
+CASO B — El "o" varía solo un componente secundario (condimento, bebida, acompañamiento):
+  Texto: "Desayuno: Tostadas con aceite o mantequilla, café o té"
+  → Crea UNA sola entrada:
+    "name": "Desayuno", "ingredients": ["Tostadas con aceite o mantequilla", "Café o té"]
+
+Para distinguir los casos:
+  - Si cada parte del "o" puede ser el plato principal de la toma por sí sola → CASO A (dos entradas)
+  - Si el "o" es una variante de un condimento, bebida o preparación secundaria → CASO B (una entrada)
+
+No apliques esta regla si el "o" aparece dentro del nombre propio de un alimento:
+  "Jamón york o serrano" → un solo ingrediente, sin separar en dos opciones.
+
 ## OPCIONES ALTERNATIVAS DE COMIDA
 
 Esta sección cubre el caso en que el nutricionista ofrece MÚLTIPLES OPCIONES para UNA MISMA toma en UN MISMO día o rango de días. Ejemplo: "Merienda: Opción A / Opción B / Opción C".

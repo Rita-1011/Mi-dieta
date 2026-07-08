@@ -22,6 +22,7 @@ let shoppingItems = [];
 let pendingImportCallback = null;
 let confirmCallback = null;
 let activeMealId = null;
+let currentViewDayIndex = -1; // -1 = uninitialised; set to today on first render
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -488,13 +489,63 @@ async function loadShoppingItems() {
 // =====================
 // Mi Dieta (Vista Principal)
 // =====================
+
+// Detects meals whose names are option variants (e.g. "Merienda - Opción A")
+// and groups them so they render as a single visual block with labelled rows.
+function groupOptionMeals(dayMeals) {
+  const OPTION_RE   = /\s*[-–]\s*(opci[oó]n|option)\s*[A-Z0-9]/i;
+  const LETTER_RE   = /\s*[-–]\s*[A-Z]$/;
+  const NUM_PAREN_RE = /\s*\(opci[oó]n\s*\d+\)$/i;
+
+  function isOption(name) {
+    return OPTION_RE.test(name) || LETTER_RE.test(name) || NUM_PAREN_RE.test(name);
+  }
+  function getBase(name) {
+    return name.replace(OPTION_RE, '').replace(LETTER_RE, '').replace(NUM_PAREN_RE, '').trim();
+  }
+  function getLabel(name) {
+    const m = name.match(/[-–]\s*(.+)$/);
+    return m ? m[1].trim() : name;
+  }
+
+  const groups = [];
+  const visited = new Set();
+
+  for (let i = 0; i < dayMeals.length; i++) {
+    if (visited.has(i)) continue;
+    const meal = dayMeals[i];
+    if (!isOption(meal.name)) {
+      groups.push({ type: 'single', meal });
+      visited.add(i);
+      continue;
+    }
+    const base = getBase(meal.name);
+    const variants = [{ meal, label: getLabel(meal.name) }];
+    visited.add(i);
+    for (let j = i + 1; j < dayMeals.length; j++) {
+      if (visited.has(j)) continue;
+      const other = dayMeals[j];
+      if (other.meal_type === meal.meal_type && isOption(other.name) && getBase(other.name) === base) {
+        variants.push({ meal: other, label: getLabel(other.name) });
+        visited.add(j);
+      }
+    }
+    if (variants.length >= 2) {
+      groups.push({ type: 'options', mealType: meal.meal_type, variants });
+    } else {
+      groups.push({ type: 'single', meal });
+    }
+  }
+  return groups;
+}
+
 function updateDietView() {
   updateUILanguage();
   $('#current-date').textContent = formatDate(new Date());
 
   const emptyState = $('#diet-empty');
-  const dietView = $('#diet-view');
-  const dietDaysGrid = $('#diet-days-grid');
+  const dietView   = $('#diet-view');
+  const container  = $('#diet-days-grid');
 
   if (meals.length === 0) {
     emptyState.classList.remove('hidden');
@@ -505,10 +556,15 @@ function updateDietView() {
   emptyState.classList.add('hidden');
   dietView.classList.remove('hidden');
 
-  const lang = getLanguage();
-  const dayLabels = DAY_LABELS[lang] || DAY_LABELS.en;
-  const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
+  // Lazy-initialise to today
+  if (currentViewDayIndex === -1) {
+    const todayIdx = DAYS.indexOf(getCurrentDayOfWeek());
+    currentViewDayIndex = todayIdx >= 0 ? todayIdx : 0;
+  }
 
+  const lang          = getLanguage();
+  const dayLabels     = DAY_LABELS[lang]     || DAY_LABELS.en;
+  const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
   const daysWithMeals = new Set(meals.map(m => m.day_of_week));
 
   const metaLabels = {
@@ -523,20 +579,12 @@ function updateDietView() {
   $('#diet-view-meta').textContent = metaLabels[lang] || metaLabels.en;
 
   const mealsByDay = {};
-  DAYS.forEach(day => mealsByDay[day] = []);
+  DAYS.forEach(day => { mealsByDay[day] = []; });
   meals.forEach(meal => {
-    if (mealsByDay[meal.day_of_week]) {
-      mealsByDay[meal.day_of_week].push(meal);
-    }
+    if (mealsByDay[meal.day_of_week]) mealsByDay[meal.day_of_week].push(meal);
   });
 
-  const mealIcons = {
-    breakfast: '🌅',
-    lunch: '🌞',
-    dinner: '🌙',
-    snack: '🥑'
-  };
-
+  const mealIcons  = { breakfast: '🌅', lunch: '🌞', dinner: '🌙', snack: '🥑' };
   const emptyTexts = {
     es: 'Sin comidas planificadas',
     en: 'No meals planned',
@@ -547,56 +595,91 @@ function updateDietView() {
     nl: 'Geen maaltijden gepland'
   };
 
-  const container = dietDaysGrid;
-  container.innerHTML = DAYS.map(day => {
-    const dayMeals = mealsByDay[day];
-    const mealCount = dayMeals.length;
-    const emptySlot = mealCount === 0 ? `<div class="diet-meal empty-slot">${emptyTexts[lang] || emptyTexts.en}</div>` : '';
+  const todayDOW   = getCurrentDayOfWeek();
+  const currentDay = DAYS[currentViewDayIndex];
+  const isToday    = currentDay === todayDOW;
+  const dayMeals   = mealsByDay[currentDay];
+  const mealCount  = dayMeals.length;
+  const prevIdx    = (currentViewDayIndex - 1 + 7) % 7;
+  const nextIdx    = (currentViewDayIndex + 1) % 7;
 
-    const dayMealsSorted = dayMeals;
+  const EDIT_ICON   = `<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>`;
+  const DELETE_ICON = `<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
+  const PREV_ICON   = `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`;
+  const NEXT_ICON   = `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>`;
 
-    const mealsList = dayMealsSorted.map(meal => {
-      const mealTypeLabel = meal.meal_type === 'snack' && meal.name
-        ? meal.name
-        : (mealTypeLabels[meal.meal_type] || meal.meal_type);
-      return `
-        <div class="diet-meal">
-          <div class="meal-header">
-            <span class="meal-type ${meal.meal_type}">${mealIcons[meal.meal_type]} ${mealTypeLabel}</span>
-            <div class="meal-actions">
-              <button class="meal-action-btn" onclick="window.editMeal('${meal.id}')" title="Editar">
-                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-              </button>
-              <button class="meal-action-btn danger" onclick="window.deleteMealItem('${meal.id}')" title="Eliminar">
-                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-              </button>
-            </div>
-          </div>
-          ${Array.isArray(meal.ingredients) && meal.ingredients.length > 0
-            ? `<ul class="preview-ingredients">${meal.ingredients.map(ing => `<li>${ing}</li>`).join('')}</ul>`
-            : `<div class="meal-name">${meal.name}</div>${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}`}
-        </div>
-      `;
-    }).join('');
+  function renderIngredients(meal) {
+    if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
+      return `<ul class="preview-ingredients">${meal.ingredients.map(ing => `<li>${ing}</li>`).join('')}</ul>`;
+    }
+    return `<div class="meal-name">${meal.name}${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}</div>`;
+  }
 
-    const dayClasses = dayMeals.length > 0 ? 'diet-day has-meals' : 'diet-day';
-    const isToday = getCurrentDayOfWeek() === day;
+  function renderActions(meal) {
+    return `<div class="meal-actions">
+      <button class="meal-action-btn" onclick="window.editMeal('${meal.id}')" title="Editar">${EDIT_ICON}</button>
+      <button class="meal-action-btn danger" onclick="window.deleteMealItem('${meal.id}')" title="Eliminar">${DELETE_ICON}</button>
+    </div>`;
+  }
 
-    return `
-      <div class="${dayClasses} ${isToday ? 'today' : ''}">
-        <div class="diet-day-header">
-          <h3>${dayLabels[day] || day}</h3>
-          <span class="meal-count">${mealCount} comida${mealCount !== 1 ? 's' : ''}</span>
+  const groups   = groupOptionMeals(dayMeals);
+  const emptySlot = `<div class="diet-meal empty-slot">${emptyTexts[lang] || emptyTexts.en}</div>`;
+
+  const mealsList = groups.length === 0 ? emptySlot : groups.map(group => {
+    if (group.type === 'single') {
+      const { meal } = group;
+      const typeLabel = mealTypeLabels[meal.meal_type] || meal.meal_type;
+      return `<div class="diet-meal">
+        <div class="meal-header">
+          <span class="meal-type ${meal.meal_type}">${mealIcons[meal.meal_type]} ${typeLabel}</span>
+          ${renderActions(meal)}
         </div>
-        <div class="diet-meals">
-          ${mealsList || emptySlot}
-        </div>
-        <div class="diet-day-footer">
-          <button class="add-meal-day-btn" onclick="window.addMealToDay('${day}')">+ Añadir</button>
-        </div>
+        ${renderIngredients(meal)}
+      </div>`;
+    }
+    // Options group
+    const typeLabel = mealTypeLabels[group.mealType] || group.mealType;
+    return `<div class="diet-meal meal-options-group">
+      <div class="meal-header">
+        <span class="meal-type ${group.mealType}">${mealIcons[group.mealType]} ${typeLabel}</span>
+        <span class="options-badge">${group.variants.length} opciones</span>
       </div>
-    `;
+      <div class="meal-options-list">
+        ${group.variants.map(({ meal, label }) => `
+          <div class="meal-option-item">
+            <div class="meal-option-header">
+              <span class="meal-option-label">${label}</span>
+              ${renderActions(meal)}
+            </div>
+            ${renderIngredients(meal)}
+          </div>`).join('')}
+      </div>
+    </div>`;
   }).join('');
+
+  container.innerHTML = `
+    <div class="day-navigator">
+      <button class="day-nav-btn" onclick="window.prevViewDay()">
+        ${PREV_ICON}<span class="day-nav-adjacent">${dayLabels[DAYS[prevIdx]]}</span>
+      </button>
+      <div class="day-nav-center">
+        <h3 class="day-nav-label">${dayLabels[currentDay]}</h3>
+        ${isToday ? '<span class="day-today-badge">Hoy</span>' : ''}
+        <span class="day-meal-count">${mealCount} comida${mealCount !== 1 ? 's' : ''}</span>
+      </div>
+      <button class="day-nav-btn" onclick="window.nextViewDay()">
+        <span class="day-nav-adjacent">${dayLabels[DAYS[nextIdx]]}</span>${NEXT_ICON}
+      </button>
+    </div>
+    <div class="diet-day-single${isToday ? ' today' : ''}">
+      <div class="diet-meals">
+        ${mealsList}
+      </div>
+      <div class="diet-day-footer">
+        <button class="add-meal-day-btn" onclick="window.addMealToDay('${currentDay}')">+ Añadir comida</button>
+      </div>
+    </div>
+  `;
 }
 
 // =====================
@@ -1231,24 +1314,32 @@ function readFileAsBase64(file) {
 }
 
 // Calls the diet-parser edge function with either text or a file.
+// Times out after 30 s so the UI is never left in a permanent loading state.
 async function callDietParser(payload) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   const url = `${SUPABASE_URL}/functions/v1/diet-parser`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-  if (!response.ok || data.error) {
-    throw new Error(data.error || `HTTP ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+    if (!Array.isArray(data.meals)) {
+      throw new Error('Respuesta inesperada del servicio IA');
+    }
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  if (!Array.isArray(data.meals)) {
-    throw new Error('Respuesta inesperada del servicio IA');
-  }
-  return data;
 }
 
 const MULTILANG_DAYS = {
@@ -2128,6 +2219,16 @@ window.deleteMealItem = (id) => {
     await loadMeals();
     updateDietView();
   });
+};
+
+window.prevViewDay = () => {
+  currentViewDayIndex = (currentViewDayIndex - 1 + 7) % 7;
+  updateDietView();
+};
+
+window.nextViewDay = () => {
+  currentViewDayIndex = (currentViewDayIndex + 1) % 7;
+  updateDietView();
 };
 
 window.addMealToDay = (day) => {
