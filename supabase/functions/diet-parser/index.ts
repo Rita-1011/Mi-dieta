@@ -168,20 +168,41 @@ Ejemplo:
   "Desayuno todos los días: Tostadas con aguacate"
   → Genera 7 entradas idénticas, una por cada día de la semana
 
-## OPCIONES ALTERNATIVAS Y ROTACIÓN SEMANAL
+## OPCIONES ALTERNATIVAS DE COMIDA
 
-Cuando el nutricionista ofrece opciones (Opción A / Opción B, o indica rotación semanal):
+Esta sección cubre el caso en que el nutricionista ofrece MÚLTIPLES OPCIONES para UNA MISMA toma en UN MISMO día o rango de días. Ejemplo: "Merienda: Opción A / Opción B / Opción C".
 
-REGLA FUNDAMENTAL: SIEMPRE preserva TODAS las opciones. "Repetir cada opción al menos dos veces por semana" NO significa "elige una". Significa que el plan incluye varias opciones para rotar.
+Este concepto es diferente a los planes de rotación completa (Día A / Día B / Día C para el plan entero), que no se deben tratar como opciones de comida.
 
-Para CADA día afectado, crea UNA entrada por CADA opción:
-- Mismo "day_of_week" y "meal_type"
-- Añade el identificador de opción al campo "name":
-  "Almuerzo - Opción A", "Almuerzo - Opción B", "Almuerzo - Opción C"
+REGLA FUNDAMENTAL: SIEMPRE preserva TODAS las opciones. Las siguientes expresiones indican opciones alternativas y NUNCA significan "elige solo una":
+- "Opción A / Opción B / Opción C"
+- "Elige una de las siguientes"
+- "Choose one"
+- "Puedes elegir entre..."
+- "Repite cada opción al menos dos veces por semana" (dentro de un plan semanal)
 
-Si el nutricionista indica que las opciones se rotan a lo largo de la semana sin asignar días específicos, asigna las opciones secuencialmente: Opción A a lunes, Opción B a martes, y repite el ciclo para los días restantes.
+Para CADA día afectado y CADA opción, crea UNA entrada separada:
+- MISMO "day_of_week" y MISMO "meal_type" en todas las opciones del mismo día
+- Añade el identificador de opción al campo "name" tal como lo usa el nutricionista:
+  "Merienda - Opción A", "Merienda - Opción B", "Merienda - Opción C"
+  "Almuerzo (opción 1)", "Almuerzo (opción 2)"
+  "Desayuno A", "Desayuno B"
 
-"Elige una" o "Choose one" también indica opciones alternativas → preserva todas con el sufijo de opción.
+Ejemplo correcto:
+  Texto: "Merienda (L-V): Opción A: Manzana con almendras / Opción B: Yogur natural"
+  → monday   snack "Merienda - Opción A" + monday   snack "Merienda - Opción B"
+  → tuesday  snack "Merienda - Opción A" + tuesday  snack "Merienda - Opción B"
+  → wednesday snack "Merienda - Opción A" + wednesday snack "Merienda - Opción B"
+  → thursday snack "Merienda - Opción A" + thursday snack "Merienda - Opción B"
+  → friday   snack "Merienda - Opción A" + friday   snack "Merienda - Opción B"
+  Total: 10 entradas (5 días × 2 opciones)
+
+Ejemplo correcto:
+  Texto: "Cena todos los días: A) Salmón con verduras  B) Pollo a la plancha  C) Tortilla"
+  → 7 días × 3 opciones = 21 entradas, todas con meal_type "dinner"
+
+Si las opciones NO especifican un rango de días pero el contexto del plan es semanal,
+aplica las opciones a todos los días que correspondan según el tipo de toma.
 
 ## COMIDA LIBRE
 
