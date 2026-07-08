@@ -473,8 +473,9 @@ function propagateSharedMeals(meals: ParsedMeal[]): ParsedMeal[] {
   const extra: ParsedMeal[] = [];
 
   for (const { days: coveredDays, template } of groups.values()) {
-    // Only expand meals that already appear on 2+ days (clearly repeating)
-    if (coveredDays.size < 2) continue;
+    // Expand even a single-day meal — the dayHasType guard below prevents
+    // overriding days that already have a different meal of the same type.
+    if (coveredDays.size < 1) continue;
 
     for (const day of activeDays) {
       if (coveredDays.has(day)) continue;
@@ -546,7 +547,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const geminiData = await geminiRes.json();
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // When thinkingBudget > 0, Gemini may put a thinking part first (thought: true).
+    // Skip all thinking parts and take the first real text part.
+    const responseParts: Array<{ thought?: boolean; text?: string }> =
+      geminiData?.candidates?.[0]?.content?.parts ?? [];
+    const rawPart = responseParts.find((p) => !p.thought && typeof p.text === "string");
+    const rawText = rawPart?.text;
     if (!rawText) throw new Error("Respuesta vacía de Gemini");
 
     let result: { language?: unknown; meals?: unknown };

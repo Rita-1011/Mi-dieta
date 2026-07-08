@@ -1994,6 +1994,39 @@ function renderParseLog() {
   container.classList.remove('hidden');
 }
 
+// For each meal type that appears on some active days but not all, copy the
+// identical meal to the missing days — provided those days have no meal of
+// that type already.  This corrects the common parser failure where a shared
+// table cell (e.g. one breakfast row spanning the whole week) is only
+// assigned to the subset of days the parser happened to read it for.
+function propagateSharedMeals(meals) {
+  const activeDays = new Set(meals.map(m => m.day_of_week));
+  if (activeDays.size < 2) return meals;
+
+  const fp = m => `${m.meal_type}||${m.name}||${(m.ingredients || []).join('|')}`;
+  const groups = new Map();
+
+  for (const meal of meals) {
+    const key = fp(meal);
+    if (!groups.has(key)) groups.set(key, { days: new Set(), template: meal });
+    groups.get(key).days.add(meal.day_of_week);
+  }
+
+  const extra = [];
+  for (const { days: coveredDays, template } of groups.values()) {
+    for (const day of activeDays) {
+      if (coveredDays.has(day)) continue;
+      const dayHasType = meals.some(
+        m => m.day_of_week === day && m.meal_type === template.meal_type
+      );
+      if (dayHasType) continue;
+      extra.push({ ...template, day_of_week: day });
+    }
+  }
+
+  return extra.length > 0 ? [...meals, ...extra] : meals;
+}
+
 function setupImport() {
   const dietText = $('#diet-text');
   const parseBtn = $('#parse-diet-btn');
@@ -2046,7 +2079,7 @@ function setupImport() {
 
   // Helper: render results after successful AI or fallback parse
   function applyParsedMeals(meals, language, source) {
-    parsedMeals = meals;
+    parsedMeals = propagateSharedMeals(meals);
     if (language) currentLanguage = language;
 
     if (parsedMeals.length === 0) {
