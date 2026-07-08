@@ -23,6 +23,7 @@ let pendingImportCallback = null;
 let confirmCallback = null;
 let activeMealId = null;
 let currentViewDayIndex = -1; // -1 = uninitialised; set to today on first render
+let planDocument = null;
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -439,7 +440,8 @@ function setupNavigation() {
 async function loadAllData() {
   await Promise.all([
     loadMeals(),
-    loadShoppingItems()
+    loadShoppingItems(),
+    loadPlanDocument()
   ]);
 
   updateDietView();
@@ -470,6 +472,15 @@ async function loadMeals() {
       }
     }
   }
+}
+
+async function loadPlanDocument() {
+  const { data } = await supabase
+    .from('plan_documents')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+  planDocument = data;
 }
 
 async function loadShoppingItems() {
@@ -646,6 +657,7 @@ function updateDietView() {
   if (meals.length === 0) {
     emptyState.classList.remove('hidden');
     dietView.classList.add('hidden');
+    $('#view-plan-document-btn')?.classList.add('hidden');
     return;
   }
 
@@ -673,6 +685,15 @@ function updateDietView() {
     nl: `${meals.length} maaltijden deze week (${daysWithMeals.size} dagen)`
   };
   $('#diet-view-meta').textContent = metaLabels[lang] || metaLabels.en;
+
+  const viewDocBtn = $('#view-plan-document-btn');
+  if (viewDocBtn) {
+    if (planDocument?.storage_path) {
+      viewDocBtn.classList.remove('hidden');
+    } else {
+      viewDocBtn.classList.add('hidden');
+    }
+  }
 
   const mealsByDay = {};
   DAYS.forEach(day => { mealsByDay[day] = []; });
@@ -2076,6 +2097,8 @@ function setupImport() {
         }));
         const { error } = await supabase.from('meals').insert(mealsToInsert);
         if (error) throw error;
+        await savePlanDocument(selectedFile);
+        selectedFile = null;
         showToast(`¡Importadas ${parsedMeals.length} comidas con éxito!`, 'success');
         resetImportUI();
         await loadMeals();
@@ -2111,6 +2134,8 @@ function setupImport() {
         }));
         const { error: mealError } = await supabase.from('meals').insert(mealsToInsert);
         if (mealError) throw mealError;
+        await savePlanDocument(selectedFile);
+        selectedFile = null;
 
         await loadMeals();
         updateDietView();
@@ -2205,6 +2230,9 @@ function showConfirm(title, message, callback) {
 // Gestión de comidas
 // =====================
 function setupMealManagement() {
+  // View original plan document
+  $('#view-plan-document-btn')?.addEventListener('click', viewPlanDocument);
+
   // Delete plan
   $('#delete-plan-btn')?.addEventListener('click', () => {
     showConfirm(
@@ -2298,7 +2326,62 @@ function setupMealManagement() {
   });
 }
 
+async function savePlanDocument(file) {
+  const importSource = !file
+    ? 'text'
+    : file.type === 'application/pdf' ? 'pdf' : 'image';
+
+  let storagePath = null;
+  if (file) {
+    storagePath = `${currentUser.id}/plan-document`;
+    const { error: uploadError } = await supabase.storage
+      .from('plan-documents')
+      .upload(storagePath, file, { upsert: true, contentType: file.type });
+    if (uploadError) {
+      console.warn('Error al subir el documento:', uploadError.message);
+      storagePath = null;
+    }
+  } else if (planDocument?.storage_path) {
+    await supabase.storage.from('plan-documents').remove([planDocument.storage_path]);
+  }
+
+  const { data } = await supabase
+    .from('plan_documents')
+    .upsert({
+      user_id: currentUser.id,
+      file_name: file?.name ?? null,
+      mime_type: file?.type ?? null,
+      storage_path: storagePath,
+      import_source: importSource
+    }, { onConflict: 'user_id' })
+    .select()
+    .maybeSingle();
+
+  planDocument = data;
+}
+
+async function deletePlanDocument() {
+  if (planDocument?.storage_path) {
+    await supabase.storage.from('plan-documents').remove([planDocument.storage_path]);
+  }
+  await supabase.from('plan_documents').delete().eq('user_id', currentUser.id);
+  planDocument = null;
+}
+
+async function viewPlanDocument() {
+  if (!planDocument?.storage_path) return;
+  const { data, error } = await supabase.storage
+    .from('plan-documents')
+    .createSignedUrl(planDocument.storage_path, 60);
+  if (error || !data?.signedUrl) {
+    showToast('No se pudo abrir el documento', 'error');
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
+}
+
 async function deletePlan() {
+  await deletePlanDocument();
   const { error } = await supabase.from('meals').delete().eq('user_id', currentUser.id);
   if (error) { showToast('Error al eliminar el plan', 'error'); return; }
   showToast('Plan eliminado', 'success');
