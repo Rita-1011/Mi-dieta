@@ -212,6 +212,57 @@ Ejemplo:
   "Desayuno todos los días: Tostadas con aguacate"
   → Genera 7 entradas idénticas, una por cada día de la semana
 
+## TABLAS Y PLANES EN FORMATO DE CUADRÍCULA
+
+Muchos nutricionistas presentan el plan como una tabla donde las filas son tomas del día y las columnas son días de la semana. Analiza la estructura completa antes de extraer cualquier comida.
+
+### Identificación de la estructura
+
+- La primera columna suele contener la etiqueta de la toma (Desayuno, Almuerzo, Merienda, Cena…).
+- Las columnas siguientes representan los días: pueden aparecer como abreviaciones (L, M, X, J, V, S, D), nombres completos o números (1–7 donde 1 = lunes).
+- Si las columnas no tienen encabezado de día pero su número coincide con los días de la semana, interprétalas como lunes → domingo.
+
+### Celdas compartidas o fusionadas
+
+Cuando una celda está visualmente fusionada (colspan) o su contenido es idéntico en varias columnas de días, significa que esa comida es la misma para todos los días que cubre la fusión.
+→ Genera UNA entrada por CADA día cubierto, con contenido idéntico.
+
+NUNCA asumas que una celda fusionada o compartida pertenece únicamente al primer día.
+
+### Celdas vacías
+
+Una celda vacía en la columna de un día concreto puede significar:
+a) La misma comida que la columna anterior (patrón "se repite").
+b) No hay comida en ese día para esa toma (omite la entrada).
+
+Usa el contexto del documento para distinguir los casos. Si el encabezado indica "todos los días" o similar, aplica el valor a todos los días aunque las celdas estén vacías.
+
+### Fila sin columna de día
+
+Si una fila de toma aparece en un plan semanal sin indicar día concreto (no hay columnas de días; la toma está descrita una sola vez), aplícala a todos los días del plan.
+
+### Ejemplos correctos
+
+Tabla con desayuno igual toda la semana y almuerzos distintos por día:
+  | Toma      | L              | M              | X              | J              | V              |
+  | Desayuno  | Avena con leche y fruta (toda la semana)                               |
+  | Almuerzo  | Pollo plancha  | Lentejas       | Merluza        | Pasta integral | Ensalada       |
+
+  → Desayuno: 5 entradas idénticas (monday–friday), "Avena con leche y fruta"
+  → Almuerzo: 5 entradas distintas, una por día con su contenido específico
+
+Tabla con celda de desayuno fusionada para L–V y valores propios para S y D:
+  | Toma      | L–V                     | S            | D          |
+  | Desayuno  | Tostadas con aguacate   | Tortilla     | Pancakes   |
+  | Cena      | Salmón con verduras     | Pizza casera | Cocido     |
+
+  → Desayuno L–V: 5 entradas "Tostadas con aguacate"
+  → Desayuno S: 1 entrada "Tortilla"
+  → Desayuno D: 1 entrada "Pancakes"
+  → Cena L–V: 5 entradas "Salmón con verduras"
+  → Cena S: 1 entrada "Pizza casera"
+  → Cena D: 1 entrada "Cocido"
+
 ## ALTERNATIVAS DENTRO DE UNA TOMA CONECTADAS CON "O"
 
 Cuando un plato o línea contiene la partícula "o" conectando dos alternativas:
