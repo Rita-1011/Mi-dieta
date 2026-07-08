@@ -1171,6 +1171,58 @@ async function clearGeneratedShoppingItems() {
   renderShoppingList(activeFilter);
 }
 
+// Calls the shopping-normalizer edge function to collapse semantic duplicates
+// (e.g. "Fruta" + "Fruta a elegir (...)"). Falls back silently on any error.
+// Both the edge function and this function enforce that canonical names must
+// already exist in the input — no new names are ever invented.
+async function semanticNormalizeShopping(merged) {
+  if (merged.length < 2) return merged;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/shopping-normalizer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ items: merged }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) return merged;
+
+    const data = await response.json();
+    if (!data || typeof data.merges !== 'object' || Array.isArray(data.merges)) return merged;
+
+    const nameSet = new Set(merged.map(i => i.name));
+    const renames = {};
+    for (const [from, to] of Object.entries(data.merges)) {
+      if (typeof to !== 'string') continue;
+      if (!nameSet.has(from) || !nameSet.has(to) || from === to) continue;
+      renames[from] = to;
+    }
+
+    if (Object.keys(renames).length === 0) return merged;
+
+    // Apply renames and collapse newly-identical entries.
+    // When two items share a canonical name, keep the first and fill in a
+    // missing quantity from the second (prefer non-null over null).
+    const seen = new Map();
+    for (const item of merged) {
+      const canonical = renames[item.name] ?? item.name;
+      const key = normalizeIngredientKey(canonical);
+      if (!seen.has(key)) {
+        seen.set(key, { name: canonical, quantity: item.quantity });
+      } else {
+        const existing = seen.get(key);
+        if (!existing.quantity && item.quantity) existing.quantity = item.quantity;
+      }
+    }
+    return [...seen.values()];
+  } catch {
+    return merged;
+  }
+}
+
 async function generateShoppingList() {
   // Always delete previously generated items first to prevent stale data
   const { error: deleteError } = await supabase
@@ -1186,7 +1238,12 @@ async function generateShoppingList() {
 
   shoppingItems = shoppingItems.filter(i => i.is_custom);
 
-  const merged = collectShoppingIngredients(meals);
+  // Step 1: deterministic extraction and dedup
+  const deterministic = collectShoppingIngredients(meals);
+
+  // Step 2: AI semantic normalization — non-blocking, falls back silently
+  const merged = await semanticNormalizeShopping(deterministic);
+
   const existingCustomNames = new Set(shoppingItems.map(i => normalizeIngredientKey(i.name)));
   const newItems = merged
     .filter(item => !existingCustomNames.has(normalizeIngredientKey(item.name)))
