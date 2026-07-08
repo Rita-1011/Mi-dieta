@@ -522,6 +522,70 @@ function isMealTimingLabel(name) {
   return MEAL_TIMING_LABELS.has(name.toLowerCase().trim());
 }
 
+// Maps each meal's timing label (or meal_type fallback) to a numeric
+// time-of-day slot so meals can be sorted chronologically within a day.
+const TIMING_ORDER = {
+  // Breakfast ~7 h
+  'desayuno': 10, 'breakfast': 10,
+  'café da manhã': 10, 'cafe da manha': 10,
+  'petit déjeuner': 10, 'petit dejeuner': 10,
+  'frühstück': 10, 'fruhstuck': 10,
+  'colazione': 10,
+  // Mid-morning ~10 h
+  'media mañana': 20, 'media manana': 20,
+  'morning snack': 20,
+  // Lunch ~13 h
+  'almuerzo': 30, 'comida': 30, 'comida principal': 30,
+  'lunch': 30,
+  'almoço': 30, 'almoco': 30,
+  'déjeuner': 30, 'dejeuner': 30,
+  'mittagessen': 30,
+  'pranzo': 30,
+  // Pre-workout ~15 h
+  'antes de entrenar': 35, 'antes del entrenamiento': 35,
+  'pre-entreno': 35, 'pre entreno': 35,
+  'pre-workout': 35,
+  // Afternoon snack ~17 h
+  'merienda': 40, 'afternoon snack': 40,
+  'lanche': 40,
+  'goûter': 40, 'gouter': 40,
+  'snack': 40,
+  'merenda': 40,
+  'colación': 40, 'colacion': 40,
+  'tentempié': 40, 'tentempie': 40,
+  'spuntino': 40,
+  // Post-workout ~17:30 h
+  'después de entrenar': 45, 'despues de entrenar': 45,
+  'después del entrenamiento': 45, 'despues del entrenamiento': 45,
+  'post-entreno': 45, 'post entreno': 45,
+  'post-workout': 45,
+  // Dinner ~20 h
+  'cena': 50, 'dinner': 50,
+  'jantar': 50,
+  'dîner': 50, 'diner': 50,
+  'abendessen': 50,
+  // After dinner ~22 h
+  'recena': 60, 'bedtime snack': 60,
+  // Before sleep ~23 h
+  'antes de dormir': 70,
+};
+
+const MEAL_TYPE_ORDER = { breakfast: 10, lunch: 30, dinner: 50, snack: 40 };
+
+const OPTION_STRIP_RE = [
+  /\s*[-–]\s*(opci[oó]n|option)\s*[A-Z0-9]/i,
+  /\s*[-–]\s*[A-Z]$/,
+  /\s*\(opci[oó]n\s*\d+\)$/i,
+];
+
+function chronologicalOrder(meal) {
+  const base = OPTION_STRIP_RE
+    .reduce((s, re) => s.replace(re, ''), meal.name || '')
+    .trim()
+    .toLowerCase();
+  return TIMING_ORDER[base] ?? MEAL_TYPE_ORDER[meal.meal_type] ?? 40;
+}
+
 // Detects meals whose names are option variants (e.g. "Merienda - Opción A")
 // and groups them so they render as a single visual block with labelled rows.
 function groupOptionMeals(dayMeals) {
@@ -630,7 +694,11 @@ function updateDietView() {
   const todayDOW   = getCurrentDayOfWeek();
   const currentDay = DAYS[currentViewDayIndex];
   const isToday    = currentDay === todayDOW;
-  const dayMeals   = mealsByDay[currentDay];
+  const dayMeals   = (mealsByDay[currentDay] || []).slice().sort((a, b) => {
+    const diff = chronologicalOrder(a) - chronologicalOrder(b);
+    if (diff !== 0) return diff;
+    return (a.display_order ?? Infinity) - (b.display_order ?? Infinity);
+  });
   const mealCount  = dayMeals.length;
   const prevIdx    = (currentViewDayIndex - 1 + 7) % 7;
   const nextIdx    = (currentViewDayIndex + 1) % 7;
