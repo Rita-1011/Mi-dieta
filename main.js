@@ -490,6 +490,37 @@ async function loadShoppingItems() {
 // Mi Dieta (Vista Principal)
 // =====================
 
+// Canonical timing labels that nutritionists use as meal-section headers.
+// When meal.name matches one of these, the badge shows the original label
+// (e.g. "Media mañana") instead of the generic type (e.g. "Colación").
+const MEAL_TIMING_LABELS = new Set([
+  // Spanish
+  'desayuno', 'media mañana', 'media manana', 'almuerzo', 'comida',
+  'comida principal', 'merienda', 'cena', 'recena', 'colación', 'colacion',
+  'tentempié', 'tentempie',
+  'antes de entrenar', 'antes del entrenamiento', 'pre-entreno', 'pre entreno',
+  'después de entrenar', 'despues de entrenar', 'post-entreno', 'post entreno',
+  'después del entrenamiento', 'despues del entrenamiento',
+  'antes de dormir',
+  // English
+  'breakfast', 'lunch', 'dinner', 'snack', 'morning snack', 'afternoon snack',
+  'pre-workout', 'post-workout', 'bedtime snack',
+  // Portuguese
+  'café da manhã', 'cafe da manha', 'almoço', 'almoco', 'jantar', 'lanche',
+  // French
+  'petit déjeuner', 'petit dejeuner', 'déjeuner', 'dejeuner',
+  'dîner', 'diner', 'goûter', 'gouter', 'collation',
+  // German
+  'frühstück', 'fruhstuck', 'mittagessen', 'abendessen',
+  // Italian
+  'colazione', 'pranzo', 'merenda', 'spuntino',
+]);
+
+function isMealTimingLabel(name) {
+  if (!name) return false;
+  return MEAL_TIMING_LABELS.has(name.toLowerCase().trim());
+}
+
 // Detects meals whose names are option variants (e.g. "Merienda - Opción A")
 // and groups them so they render as a single visual block with labelled rows.
 function groupOptionMeals(dayMeals) {
@@ -531,7 +562,7 @@ function groupOptionMeals(dayMeals) {
       }
     }
     if (variants.length >= 2) {
-      groups.push({ type: 'options', mealType: meal.meal_type, variants });
+      groups.push({ type: 'options', mealType: meal.meal_type, baseName: base, variants });
     } else {
       groups.push({ type: 'single', meal });
     }
@@ -612,6 +643,8 @@ function updateDietView() {
     if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
       return `<ul class="preview-ingredients">${meal.ingredients.map(ing => `<li>${ing}</li>`).join('')}</ul>`;
     }
+    // Avoid repeating the timing label — the badge already shows it
+    if (isMealTimingLabel(meal.name)) return '';
     return `<div class="meal-name">${meal.name}${meal.description ? `<div class="meal-description">${meal.description}</div>` : ''}</div>`;
   }
 
@@ -628,7 +661,9 @@ function updateDietView() {
   const mealsList = groups.length === 0 ? emptySlot : groups.map(group => {
     if (group.type === 'single') {
       const { meal } = group;
-      const typeLabel = mealTypeLabels[meal.meal_type] || meal.meal_type;
+      const typeLabel = isMealTimingLabel(meal.name)
+        ? meal.name
+        : (mealTypeLabels[meal.meal_type] || meal.meal_type);
       return `<div class="diet-meal">
         <div class="meal-header">
           <span class="meal-type ${meal.meal_type}">${mealIcons[meal.meal_type]} ${typeLabel}</span>
@@ -637,8 +672,10 @@ function updateDietView() {
         ${renderIngredients(meal)}
       </div>`;
     }
-    // Options group
-    const typeLabel = mealTypeLabels[group.mealType] || group.mealType;
+    // Options group — use the base timing label if recognisable
+    const typeLabel = isMealTimingLabel(group.baseName)
+      ? group.baseName
+      : (mealTypeLabels[group.mealType] || group.mealType);
     return `<div class="diet-meal meal-options-group">
       <div class="meal-header">
         <span class="meal-type ${group.mealType}">${mealIcons[group.mealType]} ${typeLabel}</span>

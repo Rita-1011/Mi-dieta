@@ -59,16 +59,60 @@ El campo "description" SIEMPRE es null. Nunca pongas nada aquí.
 El campo "language" es el código ISO 639-1 del idioma del documento (es, en, pt, fr, de, it, nl).
 El campo "language" en cada comida debe ser idéntico al campo "language" raíz.
 
-## CAMPO "name" — TÍTULO DE LA COMIDA
+## CAMPO "name" — ETIQUETA TEMPORAL DE LA TOMA
 
-Contiene el nombre o título de la toma tal como lo escribió el nutricionista.
+Contiene la etiqueta temporal original con la que el nutricionista identifica la toma.
+
+REGLA PRINCIPAL: preserva siempre el nombre de la toma tal como lo escribió el nutricionista.
+El campo "name" debe reflejar el CUÁNDO se come, no el QUÉ se come.
+
+Etiquetas temporales que SIEMPRE deben ir en "name" tal cual aparezcan en el documento:
+  Desayuno, Media mañana, Almuerzo, Comida, Comida principal, Merienda, Cena, Recena,
+  Antes de entrenar, Antes del entrenamiento, Pre-entreno,
+  Después de entrenar, Después del entrenamiento, Post-entreno,
+  Antes de dormir, Colación, Tentempié,
+  — o cualquier equivalente en el idioma del documento.
+
+El contenido de la toma (platos, recetas, ingredientes) va SIEMPRE en "ingredients", nunca en "name".
 
 Ejemplos correctos:
-- "Desayuno" (si el nutricionista solo indica el tipo de comida)
-- "Revuelto de claras con espinacas" (si el nutricionista da un nombre al plato)
-- "Almuerzo - Opción A" (cuando hay opciones alternativas)
-- "Comida libre"
-- "Media mañana"
+
+  Texto: "Desayuno: Revuelto de claras con espinacas, Tostada integral con AOVE, Café con leche"
+  → "name": "Desayuno"
+     "ingredients": ["Revuelto de claras con espinacas", "Tostada integral con AOVE", "Café con leche desnatada"]
+
+  Texto: "Almuerzo: Pechuga de pollo a la plancha con ensalada mixta"
+  → "name": "Almuerzo"
+     "ingredients": ["Pechuga de pollo a la plancha con ensalada mixta"]
+
+  Texto: "Comida principal:\n  Revuelto de claras con espinacas\n  Ingredientes: Claras de huevo, Espinacas"
+  → "name": "Comida principal"
+     "ingredients": ["Revuelto de claras con espinacas", "Claras de huevo", "Espinacas"]
+
+  Texto: "Media mañana: Manzana y puñado de almendras"
+  → "name": "Media mañana"
+     "ingredients": ["Manzana", "Almendras"]
+
+  Texto: "Antes de entrenar: Plátano + proteína en polvo"
+  → "name": "Antes de entrenar"
+     "ingredients": ["Plátano", "Proteína en polvo"]
+
+  Texto: "Antes de dormir: Yogur natural con canela"
+  → "name": "Antes de dormir"
+     "ingredients": ["Yogur natural con canela"]
+
+  Texto: "Recena: Infusión de manzanilla"
+  → "name": "Recena"
+     "ingredients": ["Infusión de manzanilla"]
+
+EXCEPCIÓN — usa el nombre del plato en "name" SOLO si el documento no incluye ninguna etiqueta temporal identificable para esa toma:
+  Texto (sin sección de día ni etiqueta temporal): "Revuelto de claras\n  Ingredientes: Claras de huevo, Espinacas"
+  → "name": "Revuelto de claras con espinacas"
+     "ingredients": ["Claras de huevo", "Espinacas"]
+
+  Texto: "Comida libre"
+  → "name": "Comida libre"
+     "ingredients": []
 
 ## CAMPO "ingredients" — LISTA DE COMPONENTES
 
