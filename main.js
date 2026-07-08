@@ -1720,6 +1720,7 @@ function parseDietPlan(text) {
   let currentMealName = '';
   let dayCount = 0;
   const parsedMealsList = [];
+  const preDayMeals = []; // meals encountered before the first day heading
 
   parseLog.length = 0;
   logParse('info', `Iniciando análisis del plan de dieta...`);
@@ -1727,17 +1728,22 @@ function parseDietPlan(text) {
   logParse('info', `Procesando ${lines.length} líneas...`);
 
   function commitMeal() {
-    if (!currentDay || !currentMealType) return;
+    if (!currentMealType) return;
     const canonicalType = getCanonicalMealType(currentMealType);
-    parsedMealsList.push({
-      day_of_week: currentDay,
+    const mealEntry = {
       meal_type: canonicalType,
       name: currentMealName,
       description: null,
       ingredients: [...currentMealIngredients],
       language: lang
-    });
-    logParse('info', `Analizado: ${currentDay}/${canonicalType} -> "${currentMealName}" (${currentMealIngredients.length} ingredientes)`);
+    };
+    if (!currentDay) {
+      preDayMeals.push(mealEntry);
+      logParse('info', `Comida global (pre-día): ${canonicalType} -> "${currentMealName}" (${currentMealIngredients.length} ingredientes)`);
+    } else {
+      parsedMealsList.push({ day_of_week: currentDay, ...mealEntry });
+      logParse('info', `Analizado: ${currentDay}/${canonicalType} -> "${currentMealName}" (${currentMealIngredients.length} ingredientes)`);
+    }
     currentMealType = null;
     currentMealIngredients = [];
     currentMealName = '';
@@ -1769,7 +1775,27 @@ function parseDietPlan(text) {
     }
 
     if (!currentDay) {
-      logParse('warn', `Línea ${i + 1} omitida (sin contexto de día aún): "${trimmed}"`);
+      // Before the first day heading: only process meal-type headers and their content.
+      // Everything else (document intros, titles) is skipped.
+      const mealType = parseMealType(trimmed);
+      if (mealType) {
+        commitMeal();
+        currentMealType = mealType;
+        currentMealName = cleanMealName(trimmed, mealType, null) || trimmed;
+        const inlineIngredients = parseIngredients(trimmed);
+        if (inlineIngredients) currentMealIngredients = inlineIngredients;
+      } else if (currentMealType) {
+        // Inside a pre-day meal: accept bullets, numbered items, and plain lines as ingredients
+        const bulletMatch = trimmed.match(/^[-•*]\s+(.+)/);
+        if (bulletMatch) { currentMealIngredients.push(bulletMatch[1].trim()); }
+        else {
+          const numberedMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
+          if (numberedMatch) { currentMealIngredients.push(numberedMatch[1].trim()); }
+          else { currentMealIngredients.push(trimmed); }
+        }
+      } else {
+        logParse('warn', `Línea ${i + 1} omitida (sin contexto de día aún): "${trimmed}"`);
+      }
       continue;
     }
 
@@ -1809,6 +1835,22 @@ function parseDietPlan(text) {
   }
 
   commitMeal(); // flush the last meal
+
+  // Propagate pre-day global meals to every parsed day that lacks that meal type
+  if (preDayMeals.length > 0) {
+    const parsedDays = [...new Set(parsedMealsList.map(m => m.day_of_week))];
+    for (const globalMeal of preDayMeals) {
+      for (const day of parsedDays) {
+        const alreadyHas = parsedMealsList.some(
+          m => m.day_of_week === day && m.meal_type === globalMeal.meal_type
+        );
+        if (!alreadyHas) {
+          parsedMealsList.push({ ...globalMeal, day_of_week: day });
+          logParse('info', `Comida global aplicada a ${day}: ${globalMeal.meal_type} -> "${globalMeal.name}"`);
+        }
+      }
+    }
+  }
 
   logParse('info', `Análisis completo: ${parsedMealsList.length} comidas de ${dayCount} días (idioma: ${lang})`);
 

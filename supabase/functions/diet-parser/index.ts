@@ -445,6 +445,54 @@ function validateAndNormalizeMeals(raw: unknown[], language: string): ParsedMeal
 }
 
 // ---------------------------------------------------------------------------
+// Post-processing: propagate a shared meal to days that Gemini missed
+// ---------------------------------------------------------------------------
+// When a meal has identical content on N days but is absent from other days
+// that are active in the plan (i.e. have at least one other meal), and no
+// other meal of the same type exists for those days, add the shared meal.
+// This corrects the most common failure mode: a merged table cell that Gemini
+// expanded for some columns but not all.
+function propagateSharedMeals(meals: ParsedMeal[]): ParsedMeal[] {
+  const activeDays = new Set<string>(meals.map((m) => m.day_of_week));
+  if (activeDays.size < 2) return meals;
+
+  // Fingerprint: meal_type + name + ingredients (order-sensitive — Gemini is
+  // deterministic for the same merged cell so order will be identical).
+  const fp = (m: ParsedMeal): string =>
+    `${m.meal_type}||${m.name}||${m.ingredients.join("|")}`;
+
+  type Group = { days: Set<string>; template: ParsedMeal };
+  const groups = new Map<string, Group>();
+
+  for (const meal of meals) {
+    const key = fp(meal);
+    if (!groups.has(key)) groups.set(key, { days: new Set(), template: meal });
+    groups.get(key)!.days.add(meal.day_of_week);
+  }
+
+  const extra: ParsedMeal[] = [];
+
+  for (const { days: coveredDays, template } of groups.values()) {
+    // Only expand meals that already appear on 2+ days (clearly repeating)
+    if (coveredDays.size < 2) continue;
+
+    for (const day of activeDays) {
+      if (coveredDays.has(day)) continue;
+
+      // Only add if this day has NO meal of this type — never override
+      const dayHasType = meals.some(
+        (m) => m.day_of_week === day && m.meal_type === template.meal_type,
+      );
+      if (dayHasType) continue;
+
+      extra.push({ ...template, day_of_week: day });
+    }
+  }
+
+  return extra.length > 0 ? [...meals, ...extra] : meals;
+}
+
+// ---------------------------------------------------------------------------
 // Handler
 // ---------------------------------------------------------------------------
 
@@ -486,7 +534,7 @@ Deno.serve(async (req: Request) => {
           generationConfig: {
             responseMimeType: "application/json",
             temperature: 0,
-            thinkingConfig: { thinkingBudget: 0 },
+            thinkingConfig: { thinkingBudget: 1024 },
           },
         }),
       },
@@ -518,7 +566,8 @@ Deno.serve(async (req: Request) => {
         : "es";
 
     // Strict validation — throws if any meal has an invalid field
-    const meals = validateAndNormalizeMeals(result.meals, language);
+    const validated = validateAndNormalizeMeals(result.meals, language);
+    const meals = propagateSharedMeals(validated);
 
     return new Response(
       JSON.stringify({ meals, language }),
