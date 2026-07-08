@@ -15,133 +15,295 @@ const VALID_DAYS = new Set([
 const VALID_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
 
 // ---------------------------------------------------------------------------
-// Comprehensive prompt — covers every real-world nutritionist format
+// Prompt — comprehensive, deterministic, fidelity-first
 // ---------------------------------------------------------------------------
-const SYSTEM_PROMPT = `Eres un sistema especializado en interpretar planes nutricionales creados por nutricionistas.
-Tu única tarea es analizar el plan de dieta y extraer TODAS las comidas convirtiéndolas al formato JSON interno de una aplicación de planificación nutricional.
+const SYSTEM_PROMPT = `Eres un sistema especializado en interpretar planes nutricionales escritos por nutricionistas.
+
+Tu única tarea es analizar el plan de dieta que se te proporciona y convertirlo al formato JSON interno de una aplicación de planificación nutricional.
+
+REGLAS DE COMPORTAMIENTO:
+- Sé DETERMINISTA: el mismo documento siempre debe producir exactamente el mismo JSON.
+- Sé FIEL: preserva el texto original del nutricionista sin reformular, traducir ni simplificar.
+- NUNCA inventes comidas, ingredientes, días ni información que no aparezca en el documento.
+- NUNCA uses interpretaciones creativas. Prefiere siempre la literalidad y la conservación.
+- Si no puedes interpretar con certeza una sección, usa el texto original tal cual.
 
 ## ESQUEMA DE SALIDA OBLIGATORIO
 
-Devuelve ÚNICAMENTE JSON válido con esta estructura exacta, sin texto adicional:
+Devuelve ÚNICAMENTE JSON válido con esta estructura. Sin texto adicional, sin markdown, sin explicaciones.
+
 {
   "language": "es",
   "meals": [
     {
       "day_of_week": "monday",
       "meal_type": "breakfast",
-      "name": "Nombre de la comida",
+      "name": "Título exacto de la comida tal como lo escribió el nutricionista",
       "description": null,
-      "ingredients": ["Componente 1", "Componente 2"],
+      "ingredients": [
+        "Primer componente tal como aparece en el documento",
+        "Segundo componente"
+      ],
       "language": "es"
     }
   ]
 }
 
-Valores EXACTOS y permitidos para "day_of_week":
+VALORES EXACTOS y ÚNICOS permitidos para "day_of_week":
   monday, tuesday, wednesday, thursday, friday, saturday, sunday
 
-Valores EXACTOS y permitidos para "meal_type":
+VALORES EXACTOS y ÚNICOS permitidos para "meal_type":
   breakfast, lunch, dinner, snack
 
-El campo "description" SIEMPRE es null.
-El campo "language" debe ser el código ISO 639-1 del idioma del documento (es, en, pt, fr, de, it, nl, etc.).
-Usa el mismo valor de "language" en el campo raíz y en cada comida.
+El campo "description" SIEMPRE es null. Nunca pongas nada aquí.
+El campo "language" es el código ISO 639-1 del idioma del documento (es, en, pt, fr, de, it, nl).
+El campo "language" en cada comida debe ser idéntico al campo "language" raíz.
+
+## CAMPO "name" — TÍTULO DE LA COMIDA
+
+Contiene el nombre o título de la toma tal como lo escribió el nutricionista.
+
+Ejemplos correctos:
+- "Desayuno" (si el nutricionista solo indica el tipo de comida)
+- "Revuelto de claras con espinacas" (si el nutricionista da un nombre al plato)
+- "Almuerzo - Opción A" (cuando hay opciones alternativas)
+- "Comida libre"
+- "Media mañana"
+
+## CAMPO "ingredients" — LISTA DE COMPONENTES
+
+Contiene los platos, alimentos o componentes de esa toma, tal como aparecen en el documento.
+Cada elemento de la lista de ingredientes o platos del nutricionista → una entrada separada en el array.
+
+Ejemplos correctos:
+  Texto del nutricionista:
+    Desayuno:
+    - Revuelto de claras con espinacas
+    - Tostada integral con AOVE
+    - Café con leche desnatada
+
+  JSON correcto:
+    "name": "Desayuno",
+    "ingredients": ["Revuelto de claras con espinacas", "Tostada integral con AOVE", "Café con leche desnatada"]
+
+  Texto del nutricionista:
+    Almuerzo: Pechuga de pollo a la plancha con ensalada mixta
+
+  JSON correcto:
+    "name": "Almuerzo",
+    "ingredients": ["Pechuga de pollo a la plancha con ensalada mixta"]
+
+  Texto del nutricionista:
+    Comida principal:
+    Revuelto de claras con espinacas
+    Ingredientes: Claras de huevo, Espinacas
+
+  JSON correcto:
+    "name": "Revuelto de claras con espinacas",
+    "ingredients": ["Claras de huevo", "Espinacas"]
+
+Si la toma solo tiene nombre pero no lista de componentes → "ingredients": []
+Preserva cantidades y especificaciones (ej: "Pan integral 60 g", "Yogur 0% 125 g").
+Preserva notas entre paréntesis relevantes (ej: "Fruta de temporada (excepto plátano y uva)").
 
 ## MAPEO DE TIPOS DE COMIDA
 
-- breakfast  → desayuno, primera comida, merienda matinal (primera del día)
+Usa el tipo que mejor refleje la posición de la toma en el día:
+- breakfast  → desayuno, primera comida del día, merienda matinal (primera del día)
 - lunch      → almuerzo, comida, comida principal del mediodía
 - dinner     → cena, última comida del día
-- snack      → media mañana, merienda, colación, tentempié, aperitivo, pre-entreno,
-               post-entreno, antes de dormir, cualquier toma ligera entre comidas principales
+- snack      → media mañana, merienda, colación, tentempié, aperitivo,
+               pre-entreno (cuando incluye alimentos reales),
+               post-entreno (cuando incluye alimentos reales),
+               antes de dormir (cuando incluye alimentos reales)
 
 ## ABREVIACIONES DE DÍAS EN ESPAÑOL
 
 L = Lunes      = monday
 M = Martes     = tuesday
-X = Miércoles  = wednesday  (también: Mi, Mx, Mie)
+X = Miércoles  = wednesday  (también: Mi, Mx, Mie, Mc)
 J = Jueves     = thursday
 V = Viernes    = friday
 S = Sábado     = saturday
 D = Domingo    = sunday
 
-Patrones compuestos — genera UNA entrada separada por cada día implicado:
-- Rango continuo:  "L-V"  = monday, tuesday, wednesday, thursday, friday
-- Rango continuo:  "L-D"  = los 7 días
-- Días alternos:   "L-J-D" = monday, thursday, sunday  (guión como separador, no como rango)
-- Lista con coma:  "L, M, X" = monday, tuesday, wednesday
-- Lista con barra: "L/M/X" = monday, tuesday, wednesday
-- Días numéricos:  "Días 1-5" o "Semana L-V" = monday a friday
-- "Laborables"    = monday, tuesday, wednesday, thursday, friday
-- "Fines de semana" = saturday, sunday
+Patrones de días — SIEMPRE genera UNA entrada separada por cada día:
 
-Para determinar si un guión indica rango o separación de días alternos, usa el contexto:
-- Si los días forman secuencia consecutiva → rango
-- Si los días no forman secuencia consecutiva (ej. L-J-D) → días alternos separados
+RANGO CONTINUO (los días forman secuencia consecutiva):
+  L-V  = monday, tuesday, wednesday, thursday, friday
+  L-D  = monday, tuesday, wednesday, thursday, friday, saturday, sunday
+  M-J  = tuesday, wednesday, thursday
+  L-S  = monday, tuesday, wednesday, thursday, friday, saturday
+
+DÍAS ALTERNOS (los días NO forman secuencia consecutiva, el guión es separador):
+  L-J-D = monday, thursday, sunday
+  L-X-V = monday, wednesday, friday
+  M-V-D = tuesday, friday, sunday
+
+Para distinguir rango de días alternos: si los días listados son consecutivos en el calendario → rango. Si no → días alternos separados.
+
+LISTA EXPLÍCITA (con coma, barra u otro separador):
+  L, M, X    = monday, tuesday, wednesday
+  L/M/X      = monday, tuesday, wednesday
+  Lunes y Miércoles = monday, wednesday
+
+EXPRESIONES:
+  "laborables" o "entre semana" = monday, tuesday, wednesday, thursday, friday
+  "fines de semana"             = saturday, sunday
+  "todos los días"              = los 7 días
+  "Días 1-5"                   = monday a friday (numeración convencional L=1)
 
 ## COMIDAS REPETIDAS EN VARIOS DÍAS
 
-Cuando una toma se indica para un rango o lista de días:
-- Genera UNA entrada idéntica por cada día
-- NO colapses varios días en una sola entrada
-- Ejemplo: "Desayuno (L-V): Avena con leche" → 5 entradas para monday, tuesday, wednesday, thursday, friday
-- Ejemplo: "Desayuno (todos los días): ..." → 7 entradas idénticas
+Cuando una toma se especifica para un rango o lista de días:
+- Genera UNA entrada IDÉNTICA por cada día
+- NUNCA colapses varios días en una sola entrada
+- NUNCA omitas ningún día del rango
 
-## OPCIONES ALTERNATIVAS
+Ejemplo:
+  "Desayuno (L-V): Avena con leche y fruta"
+  → Genera 5 entradas idénticas con day_of_week: monday, tuesday, wednesday, thursday, friday
 
-Cuando el nutricionista ofrece opciones (Opción A / Opción B / Opción C, o enumera alternativas):
-- Crea UNA entrada por cada opción
-- Mismo día y tipo de comida para todas
-- Añade el identificador al nombre: "Almuerzo - Opción A", "Almuerzo - Opción B"
-- "Repetir cada opción al menos dos veces por semana" → crear las opciones para cada día que corresponda
+Ejemplo:
+  "Desayuno todos los días: Tostadas con aguacate"
+  → Genera 7 entradas idénticas, una por cada día de la semana
+
+## OPCIONES ALTERNATIVAS Y ROTACIÓN SEMANAL
+
+Cuando el nutricionista ofrece opciones (Opción A / Opción B, o indica rotación semanal):
+
+REGLA FUNDAMENTAL: SIEMPRE preserva TODAS las opciones. "Repetir cada opción al menos dos veces por semana" NO significa "elige una". Significa que el plan incluye varias opciones para rotar.
+
+Para CADA día afectado, crea UNA entrada por CADA opción:
+- Mismo "day_of_week" y "meal_type"
+- Añade el identificador de opción al campo "name":
+  "Almuerzo - Opción A", "Almuerzo - Opción B", "Almuerzo - Opción C"
+
+Si el nutricionista indica que las opciones se rotan a lo largo de la semana sin asignar días específicos, asigna las opciones secuencialmente: Opción A a lunes, Opción B a martes, y repite el ciclo para los días restantes.
+
+"Elige una" o "Choose one" también indica opciones alternativas → preserva todas con el sufijo de opción.
 
 ## COMIDA LIBRE
 
 Cuando aparezca "comida libre", "libre", "a elección", "a gusto", "sin restricciones" u expresiones similares:
-- Crea la entrada: name: "Comida libre", ingredients: []
+- Crea la entrada: "name": "Comida libre", "ingredients": []
 - NUNCA omitas comidas libres
 
-## QUÉ NO IMPORTAR (ignorar completamente)
+## QUÉ NO IMPORTAR
 
-NO crees entradas para:
-- Suplementos puros: vitaminas, minerales, proteína en polvo como suplemento, creatina, omega-3, colágeno, magnesio, etc.
-- Instrucciones de hidratación: "beber 2 L de agua", "agua al levantarse", "infusión sin azúcar"
-- Recomendaciones generales del nutricionista: "evitar azúcares", "reducir sal", "comer despacio", "masticar bien"
-- Metadatos del documento: nombre del paciente, nombre del nutricionista, número de colegiado, fecha, período, clínica, teléfono
-- Encabezados no alimenticios: "Observaciones", "Recomendaciones generales", "Notas del nutricionista", "Aclaraciones"
-- Horarios o alarmas sin contenido alimenticio: "Comer a las 14:00" sin contenido
+NO crees entradas para ninguno de estos casos:
 
-EXCEPCIÓN: si pre-entreno o post-entreno incluyen alimentos reales (no solo suplementos), imórtalo como snack.
+Suplementos puros (no son comidas):
+- Vitaminas, minerales (magnesio, zinc, hierro, etc.)
+- Proteína en polvo cuando aparece como "suplemento" o "complemento"
+- Creatina, omega-3, colágeno, probióticos, etc.
+
+Instrucciones de hidratación:
+- "Beber 2 L de agua al día", "Agua al levantarse", "Infusión sin azúcar"
+- Cualquier instrucción que solo involucre agua, infusiones o líquidos sin valor calórico
+
+Recomendaciones generales del nutricionista:
+- "Evitar azúcares refinados", "Reducir sal", "Masticar bien", "Comer despacio"
+- Cualquier consejo de comportamiento o hábito
+
+Metadatos del documento:
+- Nombre del paciente, nombre del nutricionista, número de colegiado
+- Fecha del plan, período de validez, teléfono, nombre de la clínica
+
+Encabezados no alimenticios:
+- "Observaciones", "Recomendaciones generales", "Aclaraciones", "Notas"
+- Títulos de sección que no corresponden a una toma alimenticia
+
+EXCEPCIÓN: si pre-entreno, post-entreno o antes de dormir incluyen alimentos reales
+(no solo suplementos), imórtalo como snack.
 
 ## PRESERVACIÓN DEL CONTENIDO
 
-- NUNCA inventes comidas, ingredientes, días ni información que no aparezca explícitamente en el documento
-- Preserva el texto original de nombres e ingredientes SIN simplificar, traducir ni reformular
-- Conserva notas entre paréntesis relevantes para la comida: cantidades, especificaciones, excepciones (ej: "Fruta — excepto plátano y uva")
-- Si un elemento es ambiguo, usa el texto original tal cual, sin interpretarlo
-- Si no puedes determinar el tipo de comida con certeza, usa tu mejor inferencia pero NO omitas la comida
-
-## ESTRUCTURA DEL CAMPO INGREDIENTS
-
-"ingredients" contiene los componentes de la toma tal como aparecen en el documento:
-- Cada ítem de lista → entrada separada en el array
-- Preserva cantidades y especificaciones (ej: "Pan integral 60 g", "Yogur desnatado 0,0 %")
-- Si la comida solo tiene nombre pero no lista de componentes → ingredients: []
-- Los platos compuestos también van como strings en ingredients (ej: "Pollo a la plancha con ensalada mixta")`;
+- NUNCA inventes información. Solo extrae lo que está escrito.
+- Preserva el texto original del nutricionista sin simplificar, resumir ni reescribir.
+- Preserva especificaciones de cantidad: "Pan integral 60 g", "2 huevos", "200 ml leche".
+- Si una sección del documento no es una comida (nota, recomendación, suplemento) → ignórala.
+- Si el documento contiene información ambigua → usa el texto original tal cual en el campo que corresponda.`;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildTextRequest(text: string): unknown[] {
-  return [{ text: SYSTEM_PROMPT + "\n\nEl plan de dieta es el siguiente:\n\n---\n" + text + "\n---" }];
+interface RawMeal {
+  day_of_week?: unknown;
+  meal_type?: unknown;
+  name?: unknown;
+  description?: unknown;
+  ingredients?: unknown;
+  language?: unknown;
 }
 
-function buildFileRequest(fileBase64: string, mimeType: string): unknown[] {
+interface ParsedMeal {
+  day_of_week: string;
+  meal_type: string;
+  name: string;
+  description: null;
+  ingredients: string[];
+  language: string;
+}
+
+function buildTextParts(text: string): unknown[] {
+  return [{
+    text: SYSTEM_PROMPT +
+      "\n\nEl plan de dieta que debes analizar es el siguiente:\n\n---\n" +
+      text +
+      "\n---",
+  }];
+}
+
+function buildFileParts(fileBase64: string, mimeType: string): unknown[] {
   return [
-    { text: SYSTEM_PROMPT + "\n\nAnaliza el documento adjunto y devuelve el JSON según las instrucciones anteriores." },
+    {
+      text: SYSTEM_PROMPT +
+        "\n\nAnaliza el documento adjunto. Devuelve el JSON según las instrucciones anteriores.",
+    },
     { inline_data: { mime_type: mimeType, data: fileBase64 } },
   ];
+}
+
+function validateAndNormalizeMeals(raw: unknown[], language: string): ParsedMeal[] {
+  for (let i = 0; i < raw.length; i++) {
+    const m = raw[i] as RawMeal;
+
+    if (!m || typeof m !== "object") {
+      throw new Error(`Comida ${i + 1}: no es un objeto válido`);
+    }
+
+    const day = typeof m.day_of_week === "string" ? m.day_of_week.toLowerCase().trim() : "";
+    const type = typeof m.meal_type === "string" ? m.meal_type.toLowerCase().trim() : "";
+
+    if (!VALID_DAYS.has(day)) {
+      throw new Error(
+        `Comida ${i + 1} tiene day_of_week inválido: "${m.day_of_week}". ` +
+          `Valores permitidos: ${[...VALID_DAYS].join(", ")}`,
+      );
+    }
+    if (!VALID_TYPES.has(type)) {
+      throw new Error(
+        `Comida ${i + 1} tiene meal_type inválido: "${m.meal_type}". ` +
+          `Valores permitidos: ${[...VALID_TYPES].join(", ")}`,
+      );
+    }
+    if (typeof m.name !== "string" || !m.name.trim()) {
+      throw new Error(`Comida ${i + 1} no tiene campo "name" válido`);
+    }
+  }
+
+  return (raw as RawMeal[]).map((m) => ({
+    day_of_week: (m.day_of_week as string).toLowerCase().trim(),
+    meal_type: (m.meal_type as string).toLowerCase().trim(),
+    name: (m.name as string).trim(),
+    description: null,
+    ingredients: Array.isArray(m.ingredients)
+      ? (m.ingredients as unknown[]).map((i) => String(i)).filter((s) => s.trim())
+      : [],
+    language,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -166,9 +328,9 @@ Deno.serve(async (req: Request) => {
 
     let parts: unknown[];
     if (body.fileBase64 && body.mimeType) {
-      parts = buildFileRequest(String(body.fileBase64), String(body.mimeType));
+      parts = buildFileParts(String(body.fileBase64), String(body.mimeType));
     } else if (typeof body.text === "string" && body.text.trim()) {
-      parts = buildTextRequest(body.text);
+      parts = buildTextParts(body.text);
     } else {
       return new Response(
         JSON.stringify({ error: "Se requiere 'text' o 'fileBase64' con 'mimeType'" }),
@@ -183,7 +345,10 @@ Deno.serve(async (req: Request) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts }],
-          generationConfig: { responseMimeType: "application/json" },
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0,
+          },
         }),
       },
     );
@@ -197,30 +362,24 @@ Deno.serve(async (req: Request) => {
     const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!rawText) throw new Error("Respuesta vacía de Gemini");
 
-    const result = JSON.parse(rawText);
-    if (!Array.isArray(result.meals)) throw new Error("La respuesta no contiene un array 'meals'");
+    let result: { language?: unknown; meals?: unknown };
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      throw new Error("Gemini no devolvió JSON válido");
+    }
 
-    const language = typeof result.language === "string" && result.language ? result.language : "es";
+    if (!Array.isArray(result.meals)) {
+      throw new Error("La respuesta de Gemini no contiene un array 'meals'");
+    }
 
-    const meals = (result.meals as unknown[])
-      .filter((m) => {
-        if (!m || typeof m !== "object") return false;
-        const meal = m as Record<string, unknown>;
-        return VALID_DAYS.has(meal.day_of_week as string) && VALID_TYPES.has(meal.meal_type as string);
-      })
-      .map((m) => {
-        const meal = m as Record<string, unknown>;
-        return {
-          day_of_week: meal.day_of_week,
-          meal_type: meal.meal_type,
-          name: (typeof meal.name === "string" && meal.name.trim()) ? meal.name.trim() : String(meal.meal_type),
-          description: null,
-          ingredients: Array.isArray(meal.ingredients)
-            ? meal.ingredients.map((i: unknown) => String(i)).filter(Boolean)
-            : [],
-          language,
-        };
-      });
+    const language =
+      typeof result.language === "string" && result.language.trim()
+        ? result.language.trim()
+        : "es";
+
+    // Strict validation — throws if any meal has an invalid field
+    const meals = validateAndNormalizeMeals(result.meals, language);
 
     return new Response(
       JSON.stringify({ meals, language }),
