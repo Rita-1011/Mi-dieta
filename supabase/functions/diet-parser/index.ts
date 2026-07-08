@@ -435,6 +435,7 @@ Deno.serve(async (req: Request) => {
           generationConfig: {
             responseMimeType: "application/json",
             temperature: 0,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },

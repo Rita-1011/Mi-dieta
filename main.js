@@ -1420,10 +1420,10 @@ function readFileAsBase64(file) {
 }
 
 // Calls the diet-parser edge function with either text or a file.
-// Times out after 30 s so the UI is never left in a permanent loading state.
+// Times out after 90 s — gemini-2.5-flash with extended thinking can take 60+ s.
 async function callDietParser(payload) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
   const url = `${SUPABASE_URL}/functions/v1/diet-parser`;
   try {
     const response = await fetch(url, {
