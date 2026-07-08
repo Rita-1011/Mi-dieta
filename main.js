@@ -1220,6 +1220,37 @@ function logParse(level, message) {
   }
 }
 
+// Reads a File object and returns its base64-encoded content (without the data-URL prefix).
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// Calls the diet-parser edge function with either text or a file.
+async function callDietParser(payload) {
+  const url = `${SUPABASE_URL}/functions/v1/diet-parser`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok || data.error) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  if (!Array.isArray(data.meals)) {
+    throw new Error('Respuesta inesperada del servicio IA');
+  }
+  return data;
+}
+
 const MULTILANG_DAYS = {
   'monday': {
     en: ['monday', 'mon'],
@@ -1711,6 +1742,13 @@ function setupImport() {
   const importShoppingBtn = $('#import-shopping-btn');
   const cancelBtn = $('#cancel-import-btn');
   const langBadge = $('#detected-language');
+  const fileInput = $('#diet-file');
+  const fileUploadArea = $('#file-upload-area');
+  const fileSelectedBar = $('#file-selected');
+  const fileNameLabel = $('#file-name');
+  const removeFileBtn = $('#remove-file-btn');
+
+  let selectedFile = null;
 
   const helpToggle = $('#format-help-toggle');
   const helpPanel = $('#format-help');
@@ -1720,23 +1758,46 @@ function setupImport() {
     });
   }
 
-  parseBtn.addEventListener('click', () => {
-    const text = dietText.value.trim();
-    if (!text) {
-      showToast('Por favor, introduce un plan de dieta para analizar', 'error');
-      return;
-    }
+  // File selection handling
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showToast('El archivo supera el límite de 4 MB', 'error');
+        fileInput.value = '';
+        return;
+      }
+      selectedFile = file;
+      fileNameLabel.textContent = file.name;
+      fileSelectedBar.classList.remove('hidden');
+      fileUploadArea.classList.add('hidden');
+    });
+  }
 
-    parsedMeals = parseDietPlan(text);
-    console.log(parsedMeals);
+  if (removeFileBtn) {
+    removeFileBtn.addEventListener('click', () => {
+      selectedFile = null;
+      if (fileInput) fileInput.value = '';
+      fileSelectedBar.classList.add('hidden');
+      fileUploadArea.classList.remove('hidden');
+    });
+  }
+
+  // Helper: render results after successful AI or fallback parse
+  function applyParsedMeals(meals, language, source) {
+    parsedMeals = meals;
+    if (language) currentLanguage = language;
 
     if (parsedMeals.length === 0) {
       importBtn.disabled = true;
       importShoppingBtn.disabled = true;
+      showToast('No se encontraron comidas en el plan.', 'warning');
       return;
     }
 
     parsedPlan = flatMealsToPlan(parsedMeals);
+    console.log(parsedMeals);
     console.log('parsedPlan:', JSON.parse(JSON.stringify(parsedPlan)));
     renderPreview(parsedPlan);
     $('#meals-count').textContent = `${parsedMeals.length} comidas`;
@@ -1745,14 +1806,59 @@ function setupImport() {
     importBtn.disabled = false;
     importShoppingBtn.disabled = false;
 
-    const lang = getLanguage();
+    const lang = currentLanguage;
     if (langBadge) {
       langBadge.textContent = LANGUAGE_LABELS[lang] || lang;
       langBadge.classList.remove('hidden');
     }
 
-    showToast(`Analizadas ${parsedMeals.length} comidas de tu plan (${LANGUAGE_LABELS[lang] || lang})`, 'success');
-    renderParseLog();
+    const sourceLabel = source === 'ai' ? 'IA (Gemini)' : 'analizador de texto';
+    showToast(`Analizadas ${parsedMeals.length} comidas con ${sourceLabel}`, 'success');
+
+    if (source === 'text') renderParseLog();
+  }
+
+  parseBtn.addEventListener('click', async () => {
+    const text = dietText.value.trim();
+
+    if (!selectedFile && !text) {
+      showToast('Sube un archivo o pega el texto de tu plan de dieta', 'error');
+      return;
+    }
+
+    parseBtn.disabled = true;
+    parseBtn.innerHTML = 'Analizando con IA…';
+    parseLog.length = 0;
+
+    try {
+      let payload;
+
+      if (selectedFile) {
+        const fileBase64 = await readFileAsBase64(selectedFile);
+        payload = { fileBase64, mimeType: selectedFile.type };
+      } else {
+        payload = { text };
+      }
+
+      const result = await callDietParser(payload);
+      applyParsedMeals(result.meals, result.language, 'ai');
+    } catch (aiErr) {
+      console.warn('Diet-parser edge function failed:', aiErr.message);
+
+      // Fallback: use the local parser only when plain text is available
+      if (text) {
+        showToast('Servicio IA no disponible — usando el analizador de texto', 'warning');
+        const fallbackMeals = parseDietPlan(text);
+        applyParsedMeals(fallbackMeals, currentLanguage, 'text');
+      } else {
+        showToast(`Error al analizar: ${aiErr.message}`, 'error');
+        importBtn.disabled = true;
+        importShoppingBtn.disabled = true;
+      }
+    } finally {
+      parseBtn.disabled = false;
+      parseBtn.innerHTML = 'Analizar plan';
+    }
   });
 
   clearBtn.addEventListener('click', resetImportUI);
@@ -1862,6 +1968,15 @@ function setupImport() {
 function resetImportUI() {
   const langBadge = $('#detected-language');
   $('#diet-text').value = '';
+
+  // Clear file selection if present
+  const fileInput = $('#diet-file');
+  if (fileInput) fileInput.value = '';
+  const fileSelectedBar = $('#file-selected');
+  const fileUploadArea = $('#file-upload-area');
+  if (fileSelectedBar) fileSelectedBar.classList.add('hidden');
+  if (fileUploadArea) fileUploadArea.classList.remove('hidden');
+
   parsedMeals = [];
   parsedPlan = null;
   parseLog.length = 0;

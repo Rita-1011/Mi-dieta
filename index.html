@@ -177,27 +177,44 @@
             <div class="section-header">
               <div>
                 <h2>Importar plan de dieta</h2>
-                <p class="section-subtitle">Pega tu plan semanal en cualquier idioma para importarlo automáticamente</p>
+                <p class="section-subtitle">Sube un PDF, imagen o pega el texto de tu plan — Gemini lo interpreta automáticamente</p>
               </div>
             </div>
 
             <div class="import-container">
               <div class="card">
                 <div class="card-header">
-                  <h3>Pega tu plan de dieta</h3>
+                  <h3>Tu plan de dieta</h3>
+                  <span class="ai-badge">IA</span>
                   <span id="detected-language" class="lang-badge hidden"></span>
                 </div>
                 <div class="card-body">
-                  <div class="form-group">
-                    <label for="diet-text">Texto del plan de alimentación</label>
-                    <textarea id="diet-text" rows="12" placeholder="Idiomas soportados: español, inglés, portugués, francés, alemán, italiano y neerlandés
 
-Ejemplo:
-Lunes:
-Desayuno: Avena con frutas y yogur
-Almuerzo: Ensalada de pollo a la plancha
-Cena: Salmón con verduras al horno
-Colación: Yogur griego con nueces"></textarea>
+                  <!-- File upload -->
+                  <div class="form-group">
+                    <label>Subir documento <span class="label-optional">(PDF, imagen)</span></label>
+                    <label class="file-upload-area" id="file-upload-area" for="diet-file">
+                      <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                      </svg>
+                      <strong>Haz clic para subir o arrastra el archivo</strong>
+                      <span class="file-upload-hint">PDF, JPG, PNG, WEBP · Máx. 4 MB</span>
+                      <input type="file" id="diet-file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="file-input-hidden">
+                    </label>
+                    <div id="file-selected" class="file-selected hidden">
+                      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                      </svg>
+                      <span class="file-name" id="file-name"></span>
+                      <button type="button" id="remove-file-btn" class="btn-clear-file" aria-label="Quitar archivo">&times;</button>
+                    </div>
+                  </div>
+
+                  <div class="import-or-divider"><span>o pega el texto directamente</span></div>
+
+                  <div class="form-group">
+                    <label for="diet-text">Texto del plan</label>
+                    <textarea id="diet-text" rows="10" placeholder="Pega aquí el texto copiado de tu dieta — cualquier formato, cualquier idioma"></textarea>
                   </div>
 
                   <div class="import-format-help">
@@ -209,13 +226,16 @@ Colación: Yogur griego con nueces"></textarea>
                     </button>
                     <div id="format-help" class="format-help hidden">
                       <div class="help-content">
-                        <p><strong>Idiomas detectados automáticamente:</strong> Español, Inglés, Portugués, Francés, Alemán, Italiano, Neerlandés</p>
+                        <p><strong>Gemini interpreta automáticamente cualquier formato real de nutricionista:</strong></p>
                         <ul>
-                          <li><strong>Días:</strong> Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo</li>
-                          <li><strong>Comidas:</strong> Desayuno · Media mañana · Almuerzo · Merienda · Cena · Colación</li>
-                          <li><strong>Ingredientes:</strong> <code>ingredientes: pollo, arroz, verduras</code></li>
+                          <li><strong>Documentos:</strong> PDF, imágenes (JPG, PNG, WEBP), texto copiado o escaneado</li>
+                          <li><strong>Idiomas:</strong> Español, Inglés, Portugués, Francés, Alemán, Italiano y más</li>
+                          <li><strong>Abreviaciones:</strong> L=Lunes, M=Martes, X=Miércoles, J=Jueves, V=Viernes, S=Sábado, D=Domingo</li>
+                          <li><strong>Rangos de días:</strong> L-V = lunes a viernes · L-J-D = lunes, jueves y domingo</li>
+                          <li><strong>Opciones alternativas:</strong> Opción A / B / C se preservan como comidas separadas</li>
+                          <li><strong>Comida libre:</strong> Se importa automáticamente</li>
+                          <li><strong>Ignorado automáticamente:</strong> Suplementos, instrucciones de hidratación, notas generales</li>
                         </ul>
-                        <p class="help-example"><strong>Ejemplo:</strong><br>Lunes:<br>Desayuno: Avena con frutas<br>Media mañana: Yogur natural<br>Almuerzo: Pollo a la plancha con ensalada<br>Merienda: Frutos secos<br>Cena: Salmón con verduras al horno</p>
                       </div>
                     </div>
                   </div>
