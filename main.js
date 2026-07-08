@@ -451,6 +451,7 @@ async function loadMeals() {
     .from('meals')
     .select('*')
     .eq('user_id', currentUser.id)
+    .order('display_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -1999,10 +2000,11 @@ function setupImport() {
       importBtn.disabled = true;
       importBtn.innerHTML = 'Importando…';
       try {
-        const mealsToInsert = parsedMeals.map(meal => ({
+        const mealsToInsert = parsedMeals.map((meal, index) => ({
           ...meal,
           user_id: currentUser.id,
-          language: currentLanguage
+          language: currentLanguage,
+          display_order: index
         }));
         const { error } = await supabase.from('meals').insert(mealsToInsert);
         if (error) throw error;
@@ -2033,10 +2035,11 @@ function setupImport() {
       importShoppingBtn.disabled = true;
       importShoppingBtn.innerHTML = 'Importando…';
       try {
-        const mealsToInsert = parsedMeals.map(meal => ({
+        const mealsToInsert = parsedMeals.map((meal, index) => ({
           ...meal,
           user_id: currentUser.id,
-          language: currentLanguage
+          language: currentLanguage,
+          display_order: index
         }));
         const { error: mealError } = await supabase.from('meals').insert(mealsToInsert);
         if (mealError) throw mealError;
