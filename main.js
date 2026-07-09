@@ -694,8 +694,8 @@ function updateDietView() {
 
   // Plan name: only update when the user is not currently editing it
   const planNameEl = $('#diet-view-name');
-  const editRow    = $('#plan-name-edit-row');
-  if (planNameEl && editRow?.classList.contains('hidden')) {
+  const nameRow    = $('#plan-name-row');
+  if (planNameEl && !nameRow?.classList.contains('hidden')) {
     planNameEl.textContent = planDocument?.plan_name || 'Mi Plan';
   }
 
@@ -2363,12 +2363,12 @@ function setupPlanNameEdit() {
   const saveBtn    = $('#plan-name-save-btn');
   const cancelBtn  = $('#plan-name-cancel-btn');
   const displayEl  = $('#diet-view-name');
+  const nameRow    = $('#plan-name-row');
 
   if (!editBtn) return;
 
   function openEdit() {
-    displayEl.classList.add('hidden');
-    editBtn.classList.add('hidden');
+    nameRow.classList.add('hidden');
     nameInput.value = displayEl.textContent.trim();
     editRow.classList.remove('hidden');
     nameInput.focus();
@@ -2377,8 +2377,7 @@ function setupPlanNameEdit() {
 
   function closeEdit() {
     editRow.classList.add('hidden');
-    displayEl.classList.remove('hidden');
-    editBtn.classList.remove('hidden');
+    nameRow.classList.remove('hidden');
   }
 
   async function commitEdit() {

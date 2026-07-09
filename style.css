@@ -585,6 +585,7 @@ code {
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .plan-header-main {
@@ -592,13 +593,13 @@ code {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  flex: 1 1 200px;
 }
 
 .plan-name-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .plan-name-display {
@@ -607,6 +608,10 @@ code {
   color: var(--gray-900);
   line-height: 1.25;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .plan-name-edit-btn {
@@ -628,16 +633,22 @@ code {
   color: var(--gray-700);
 }
 
+/* Edit row replaces the name+button row entirely when open */
 .plan-name-edit-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex-wrap: wrap;
+}
+.plan-name-edit-row .plan-name-input {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.plan-name-edit-row .btn-sm {
+  flex-shrink: 0;
 }
 
 .plan-name-input {
-  flex: 1;
-  min-width: 0;
   padding: 6px 10px;
   font-size: 0.9375rem;
   font-family: inherit;
@@ -647,6 +658,7 @@ code {
   outline: none;
   box-shadow: 0 0 0 3px rgb(22 163 74 / 0.12);
   color: var(--gray-900);
+  width: 100%;
 }
 
 .plan-import-date {
@@ -658,18 +670,18 @@ code {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
+/* On narrow viewports the actions row drops below the name */
 @media (max-width: 600px) {
   .plan-header {
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
   .plan-header-actions {
     width: 100%;
-    justify-content: flex-start;
   }
   .plan-header-actions .btn {
     flex: 1 1 auto;
@@ -701,7 +713,7 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: none;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
@@ -711,7 +723,8 @@ code {
   font-family: inherit;
   cursor: pointer;
   transition: all var(--fast) var(--ease);
-  min-width: 110px;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .day-nav-btn:first-child { justify-content: flex-start; }
@@ -1803,13 +1816,16 @@ code {
 
 @media (max-width: 480px) {
   .day-nav-adjacent { display: none; }
-  .day-nav-btn { min-width: 44px; padding: 8px 10px; }
+  .day-nav-btn { padding: 8px 10px; }
   .auth-form { padding: 24px; }
+  .modal { padding: 8px; }
   .modal-content { border-radius: var(--radius-lg); }
   .preview-actions { flex-direction: column; }
   .preview-actions .btn { width: 100%; justify-content: center; }
   .import-actions { flex-direction: column; }
   .import-actions .btn { width: 100%; }
+  /* Always show meal action buttons on touch screens */
+  .meal-actions { opacity: 1; }
 }
 
 /* ===================== */
@@ -1886,17 +1902,6 @@ code {
   border-color: var(--green-400);
   color: var(--green-600);
   background: var(--green-50);
-}
-
-/* Delete plan button hint color */
-#delete-plan-btn {
-  color: var(--gray-500);
-  font-size: 0.8125rem;
-}
-
-#delete-plan-btn:hover {
-  color: var(--red-600);
-  background: var(--red-100);
 }
 
 /* Smaller modal variant */
