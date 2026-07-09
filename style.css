@@ -109,7 +109,7 @@ code {
   font-weight: 500;
   font-family: inherit;
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all var(--fast) var(--ease);
@@ -131,6 +131,11 @@ code {
   background: var(--green-700);
   border-color: var(--green-700);
 }
+.btn-primary:active:not(:disabled) {
+  background: var(--green-700);
+  transform: translateY(1px);
+  box-shadow: none;
+}
 
 .btn-secondary {
   background: #fff;
@@ -142,6 +147,10 @@ code {
   background: var(--gray-50);
   border-color: var(--gray-300);
 }
+.btn-secondary:active:not(:disabled) {
+  background: var(--gray-100);
+  transform: translateY(1px);
+}
 
 .btn-ghost {
   background: transparent;
@@ -151,6 +160,18 @@ code {
 .btn-ghost:hover:not(:disabled) {
   background: var(--gray-100);
   color: var(--gray-800);
+}
+.btn-ghost:active:not(:disabled) {
+  background: var(--gray-200);
+  transform: translateY(1px);
+}
+
+.btn-danger-ghost {
+  color: var(--red-600);
+}
+.btn-danger-ghost:hover:not(:disabled) {
+  background: var(--red-100);
+  color: var(--red-600);
 }
 
 .btn-outline {
@@ -165,6 +186,7 @@ code {
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.8125rem;
+  border-radius: 8px;
 }
 
 .btn-lg {
@@ -551,29 +573,103 @@ code {
 /* ===================== */
 .diet-view { animation: fadeIn var(--base) var(--ease); }
 
-.diet-view-bar {
+/* Plan header */
+.plan-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
 }
 
-.diet-view-info {
+.plan-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.plan-name-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.diet-view-name {
+.plan-name-display {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.plan-name-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+  flex-shrink: 0;
+}
+.plan-name-edit-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.plan-name-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.plan-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
   font-size: 0.9375rem;
+  font-family: inherit;
   font-weight: 600;
+  border: 1.5px solid var(--green-600);
+  border-radius: 8px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(22 163 74 / 0.12);
   color: var(--gray-900);
 }
 
-.diet-view-meta {
+.plan-import-date {
   font-size: 0.8125rem;
   color: var(--gray-400);
+}
+
+.plan-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .plan-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .plan-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 /* Day grid — single-day view */
@@ -738,14 +834,15 @@ code {
 }
 
 .diet-meal {
-  padding: 7px 9px;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-100);
   border-left: 3px solid var(--green-500);
-  transition: background var(--fast) var(--ease);
+  transition: background var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
 }
 
-.diet-meal:hover { background: var(--gray-100); }
+.diet-meal:hover { background: var(--gray-50); box-shadow: var(--shadow-xs); }
 
 .diet-meal.empty-slot {
   background: transparent;
@@ -1032,7 +1129,60 @@ code {
   font-size: 0.8125rem;
   line-height: 1.65;
   resize: vertical;
-  min-height: 220px;
+  min-height: 180px;
+}
+
+/* Collapsible paste text panel */
+.paste-text-toggle-wrap {
+  margin: 4px 0 16px;
+}
+
+.paste-text-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+  width: 100%;
+  justify-content: space-between;
+}
+.paste-text-toggle-btn:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--gray-800);
+}
+.paste-text-toggle-btn.open {
+  border-color: var(--green-600);
+  color: var(--green-700);
+  background: var(--green-50);
+}
+.toggle-chevron {
+  transition: transform var(--base) var(--ease);
+  flex-shrink: 0;
+}
+.paste-text-toggle-btn.open .toggle-chevron {
+  transform: rotate(180deg);
+}
+
+.paste-text-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--slow) var(--ease);
+}
+.paste-text-panel.open {
+  max-height: 400px;
+}
+.paste-text-panel textarea {
+  margin-top: 10px;
+  width: 100%;
 }
 
 .import-format-help { margin-bottom: 16px; }
@@ -1106,10 +1256,10 @@ code {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 20px 16px;
+  gap: 8px;
+  padding: 36px 24px;
   border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--gray-50);
   cursor: pointer;
   transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease);
@@ -1163,22 +1313,6 @@ code {
   flex-shrink: 0;
 }
 .btn-clear-file:hover { color: var(--red-600); background: var(--red-100); }
-
-.import-or-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 4px 0;
-  color: var(--gray-400);
-  font-size: 0.8125rem;
-}
-.import-or-divider::before,
-.import-or-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--gray-200);
-}
 
 .ai-badge {
   display: inline-flex;

@@ -1,0 +1,1 @@
+ALTER TABLE plan_documents ADD COLUMN IF NOT EXISTS plan_name text;

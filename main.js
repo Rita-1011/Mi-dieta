@@ -246,7 +246,7 @@ function updateUILanguage() {
   };
 
   setText('diet-section-title', labels.dietSectionTitle);
-  setText('diet-view-name', labels.dietViewName);
+  // diet-view-name is managed by updateDietView (shows plan_name or i18n label)
   setText('shopping-title', labels.shoppingTitle);
   setText('diet-empty-title', labels.emptyTitle);
   setText('diet-empty-line1', labels.emptyLine1);
@@ -687,18 +687,33 @@ function updateDietView() {
   const lang          = getLanguage();
   const dayLabels     = DAY_LABELS[lang]     || DAY_LABELS.en;
   const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
-  const daysWithMeals = new Set(meals.map(m => m.day_of_week));
 
-  const metaLabels = {
-    es: `${meals.length} comidas esta semana (${daysWithMeals.size} días)`,
-    en: `${meals.length} meals this week (${daysWithMeals.size} days)`,
-    pt: `${meals.length} refeições esta semana (${daysWithMeals.size} dias)`,
-    fr: `${meals.length} repas cette semaine (${daysWithMeals.size} jours)`,
-    de: `${meals.length} Mahlzeiten diese Woche (${daysWithMeals.size} Tage)`,
-    it: `${meals.length} pasti questa settimana (${daysWithMeals.size} giorni)`,
-    nl: `${meals.length} maaltijden deze week (${daysWithMeals.size} dagen)`
-  };
-  $('#diet-view-meta').textContent = metaLabels[lang] || metaLabels.en;
+  // Plan name: use saved name if available, otherwise fall back to i18n label
+  const planNameEl = $('#diet-view-name');
+  if (planNameEl) {
+    planNameEl.textContent = planDocument?.plan_name || planNameEl.textContent || 'Mi Plan';
+  }
+
+  // Import date instead of meal count
+  const metaEl = $('#diet-view-meta');
+  if (metaEl) {
+    if (planDocument?.created_at) {
+      const importDate = new Date(planDocument.created_at);
+      const formatted = importDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      const importLabels = {
+        es: `Importado el ${formatted}`,
+        en: `Imported on ${importDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        pt: `Importado em ${importDate.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        fr: `Importé le ${importDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        de: `Importiert am ${importDate.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        it: `Importato il ${importDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        nl: `Geïmporteerd op ${importDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      };
+      metaEl.textContent = importLabels[lang] || importLabels.es;
+    } else {
+      metaEl.textContent = '';
+    }
+  }
 
   const viewDocBtn = $('#view-plan-document-btn');
   if (viewDocBtn) {
@@ -2251,7 +2266,8 @@ async function savePlanDocument(file) {
       file_name: file?.name ?? null,
       mime_type: file?.type ?? null,
       storage_path: storagePath,
-      import_source: importSource
+      import_source: importSource,
+      plan_name: planDocument?.plan_name ?? null
     }, { onConflict: 'user_id' })
     .select()
     .maybeSingle();
@@ -2333,6 +2349,81 @@ window.addMealToDay = (day) => {
 };
 
 // =====================
+// Plan name editing
+// =====================
+function setupPlanNameEdit() {
+  const editBtn    = $('#plan-name-edit-btn');
+  const editRow    = $('#plan-name-edit-row');
+  const nameInput  = $('#plan-name-input');
+  const saveBtn    = $('#plan-name-save-btn');
+  const cancelBtn  = $('#plan-name-cancel-btn');
+  const displayEl  = $('#diet-view-name');
+
+  if (!editBtn) return;
+
+  function openEdit() {
+    displayEl.classList.add('hidden');
+    editBtn.classList.add('hidden');
+    nameInput.value = displayEl.textContent.trim();
+    editRow.classList.remove('hidden');
+    nameInput.focus();
+    nameInput.select();
+  }
+
+  function closeEdit() {
+    editRow.classList.add('hidden');
+    displayEl.classList.remove('hidden');
+    editBtn.classList.remove('hidden');
+  }
+
+  async function commitEdit() {
+    const newName = nameInput.value.trim();
+    if (!newName) { closeEdit(); return; }
+    displayEl.textContent = newName;
+    closeEdit();
+    await savePlanName(newName);
+  }
+
+  editBtn.addEventListener('click', openEdit);
+  cancelBtn.addEventListener('click', closeEdit);
+  saveBtn.addEventListener('click', commitEdit);
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+    if (e.key === 'Escape') closeEdit();
+  });
+}
+
+async function savePlanName(name) {
+  if (!currentUser) return;
+  const { data } = await supabase
+    .from('plan_documents')
+    .upsert({ user_id: currentUser.id, plan_name: name, import_source: planDocument?.import_source ?? 'text' }, { onConflict: 'user_id' })
+    .select()
+    .maybeSingle();
+  if (data) planDocument = data;
+}
+
+// =====================
+// Paste text toggle
+// =====================
+function setupPasteTextToggle() {
+  const btn   = $('#paste-text-toggle-btn');
+  const panel = $('#paste-text-panel');
+  if (!btn || !panel) return;
+
+  btn.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    if (isOpen) {
+      panel.classList.remove('open');
+      btn.classList.remove('open');
+    } else {
+      panel.classList.add('open');
+      btn.classList.add('open');
+    }
+  });
+}
+
+// =====================
 // Inicialización
 // =====================
 async function init() {
@@ -2343,6 +2434,8 @@ async function init() {
   setupAssistant();
   setupImport();
   setupMealManagement();
+  setupPlanNameEdit();
+  setupPasteTextToggle();
 
   await initAuth();
 }
