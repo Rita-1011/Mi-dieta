@@ -659,6 +659,7 @@ code {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 600px) {
@@ -669,6 +670,10 @@ code {
   .plan-header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+  .plan-header-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }
 
@@ -1660,7 +1665,7 @@ code {
   background: #fff;
   border-radius: var(--radius-xl);
   width: 100%;
-  max-width: 460px;
+  max-width: 520px;
   max-height: 90vh;
   overflow: auto;
   animation: slideUp var(--slow) var(--ease);

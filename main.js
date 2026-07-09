@@ -672,11 +672,15 @@ function updateDietView() {
     emptyState.classList.remove('hidden');
     dietView.classList.add('hidden');
     $('#view-plan-document-btn')?.classList.add('hidden');
+    const sectionHeader = document.querySelector('#diet-section .section-header');
+    if (sectionHeader) sectionHeader.classList.remove('hidden');
     return;
   }
 
   emptyState.classList.add('hidden');
   dietView.classList.remove('hidden');
+  const sectionHeader = document.querySelector('#diet-section .section-header');
+  if (sectionHeader) sectionHeader.classList.add('hidden');
 
   // Lazy-initialise to today
   if (currentViewDayIndex === -1) {
@@ -688,10 +692,11 @@ function updateDietView() {
   const dayLabels     = DAY_LABELS[lang]     || DAY_LABELS.en;
   const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
 
-  // Plan name: use saved name if available, otherwise fall back to i18n label
+  // Plan name: only update when the user is not currently editing it
   const planNameEl = $('#diet-view-name');
-  if (planNameEl) {
-    planNameEl.textContent = planDocument?.plan_name || planNameEl.textContent || 'Mi Plan';
+  const editRow    = $('#plan-name-edit-row');
+  if (planNameEl && editRow?.classList.contains('hidden')) {
+    planNameEl.textContent = planDocument?.plan_name || 'Mi Plan';
   }
 
   // Import date instead of meal count
@@ -2397,7 +2402,8 @@ async function savePlanName(name) {
   if (!currentUser) return;
   const { data } = await supabase
     .from('plan_documents')
-    .upsert({ user_id: currentUser.id, plan_name: name, import_source: planDocument?.import_source ?? 'text' }, { onConflict: 'user_id' })
+    .update({ plan_name: name })
+    .eq('user_id', currentUser.id)
     .select()
     .maybeSingle();
   if (data) planDocument = data;
