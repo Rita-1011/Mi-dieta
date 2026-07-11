@@ -21,6 +21,7 @@
 
 import { describe, test, expect } from 'vitest';
 import {
+  capitalize,
   normalizeIngredientKey,
   stripCookingMethod,
   extractQtyAndName,
@@ -190,6 +191,45 @@ describe('extractQtyAndName', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 3b. capitalize — case normalization for shouted / mechanically title-cased text
+// ---------------------------------------------------------------------------
+describe('capitalize', () => {
+  test('plain lowercase word gets first letter capitalized', () => {
+    expect(capitalize('tomate')).toBe('Tomate');
+  });
+
+  test('already-capitalized phrase is left untouched', () => {
+    expect(capitalize('Salmón a la plancha')).toBe('Salmón a la plancha');
+  });
+
+  test('single all-caps word longer than 4 chars is normalized to sentence case', () => {
+    expect(capitalize('ESPINACAS')).toBe('Espinacas');
+  });
+
+  test('multi-word all-caps phrase is normalized to sentence case', () => {
+    expect(capitalize('POLLO A LA PLANCHA')).toBe('Pollo a la plancha');
+  });
+
+  test('mechanically title-cased phrase (3+ words) is normalized to sentence case', () => {
+    expect(capitalize('Pollo A La Plancha')).toBe('Pollo a la plancha');
+  });
+
+  test('short all-caps acronym (<=4 chars) is preserved', () => {
+    expect(capitalize('AOVE')).toBe('AOVE');
+    expect(capitalize('IA')).toBe('IA');
+  });
+
+  test('two-word capitalized phrase is not treated as title-case noise', () => {
+    // Below the 3-word threshold — could be an intentional proper noun/brand.
+    expect(capitalize('Aceite Girasol')).toBe('Aceite Girasol');
+  });
+
+  test('empty string returns empty string', () => {
+    expect(capitalize('')).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 4. extractShoppingIngredients
 // ---------------------------------------------------------------------------
 describe('extractShoppingIngredients', () => {
@@ -353,11 +393,11 @@ describe('extractShoppingIngredients', () => {
   });
 
   // --- uppercase input ---
-  test('uppercase ingredient with cooking method is stripped and preserved in caps', () => {
-    // The pipeline does not lowercase display names; normalizeIngredientKey
-    // handles case-insensitive merging separately.
+  test('uppercase ingredient with cooking method is stripped and case-normalized', () => {
+    // capitalize() now normalizes shouted all-caps text to sentence case —
+    // see the "capitalize" describe block above.
     expect(extractShoppingIngredients('POLLO A LA PLANCHA')).toEqual([
-      { name: 'POLLO', qty: null },
+      { name: 'Pollo', qty: null },
     ]);
   });
 
@@ -371,9 +411,9 @@ describe('extractShoppingIngredients', () => {
   });
 
   // --- quantity range (fix 1) ---
-  test('range quantity "3-4 ALMENDRAS" → null qty, correct name', () => {
+  test('range quantity "3-4 ALMENDRAS" → null qty, case-normalized name', () => {
     expect(extractShoppingIngredients('3-4 ALMENDRAS')).toEqual([
-      { name: 'ALMENDRAS', qty: null },
+      { name: 'Almendras', qty: null },
     ]);
   });
 
@@ -401,6 +441,19 @@ describe('extractShoppingIngredients', () => {
   test('quantity + ingredient (no cooking method)', () => {
     expect(extractShoppingIngredients('200g de pollo')).toEqual([
       { name: 'Pollo', qty: '200g' },
+    ]);
+  });
+
+  // --- shouted / mechanically title-cased source text ---
+  test('all-caps ingredient from source document is normalized to sentence case', () => {
+    expect(extractShoppingIngredients('ESPINACAS')).toEqual([
+      { name: 'Espinacas', qty: null },
+    ]);
+  });
+
+  test('quantity + all-caps ingredient is normalized to sentence case', () => {
+    expect(extractShoppingIngredients('150g ALMENDRAS')).toEqual([
+      { name: 'Almendras', qty: '150g' },
     ]);
   });
 });
@@ -556,7 +609,7 @@ describe('collectShoppingIngredients', () => {
     }));
     const result = collectShoppingIngredients(meals);
     expect(result).toHaveLength(1);
-    expect(result[0].name).toBe('ALMENDRAS');
+    expect(result[0].name).toBe('Almendras');
     expect(result[0].quantity).toBe('7x');
   });
 

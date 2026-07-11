@@ -59,9 +59,36 @@ export const RECIPE_PREFIXES = [
   'bowl de', 'wrap de', 'wok de',
 ].sort((a, b) => b.length - a.length);
 
+// Acronyms like "AOVE" or "IA" are short enough to be intentional and are
+// left untouched; anything longer in all caps reads as a shouted artifact
+// of the source document rather than a deliberate acronym.
+const ACRONYM_MAX_LEN = 4;
+
+function isAllCapsWord(word) {
+  return /[A-ZÀ-ÖØ-Þ]/.test(word) && !/[a-zà-öø-ÿ]/.test(word);
+}
+
+// Detects text that reads as "shouting" or mechanically title-cased rather
+// than a deliberate acronym or proper noun, e.g. "ESPINACAS" or
+// "Pollo A La Plancha" — both of which parsers occasionally pass through
+// verbatim from inconsistently formatted source documents.
+function needsCaseNormalization(str) {
+  const words = str.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return false;
+
+  if (words.length === 1) {
+    return isAllCapsWord(words[0]) && words[0].length > ACRONYM_MAX_LEN;
+  }
+  if (words.every(isAllCapsWord)) return true;
+  if (words.length > 2 && words.every(w => /^[A-ZÀ-Ý][a-zà-ÿ]*$/.test(w))) return true;
+
+  return false;
+}
+
 export function capitalize(str) {
   if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
+  const source = needsCaseNormalization(str) ? str.toLowerCase() : str;
+  return source.charAt(0).toUpperCase() + source.slice(1);
 }
 
 // Normalizes an ingredient name to a stable grouping key.

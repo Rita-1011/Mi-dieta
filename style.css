@@ -2,48 +2,79 @@
 /* Variables             */
 /* ===================== */
 :root {
-  --green-50:  #f0fdf4;
-  --green-100: #dcfce7;
-  --green-200: #bbf7d0;
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-700: #15803d;
+  /* Forest accent — primary actions, active nav, focus. Deliberately a deep,
+     muted forest rather than the mint-green typical of health/wellness apps. */
+  --green-50:  #f1f5f2;
+  --green-100: #e1eae4;
+  --green-200: #c3d6c9;
+  --green-400: #7c9c87;
+  --green-500: #567061;
+  --green-600: #3f5d4c;
+  --green-700: #304a3a;
 
-  --gray-50:  #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  /* Warm neutral scale — app background, surfaces, borders, text.
+     Replaces the previous cool/clinical slate scale. */
+  --gray-50:  #fbfbf9;
+  --gray-100: #f3f2ee;
+  --gray-200: #e7e5e0;
+  --gray-300: #d6d3cb;
+  --gray-400: #ada99d;
+  --gray-500: #8f8b7e;
+  --gray-600: #6b6b63;
+  --gray-700: #4a4944;
+  --gray-800: #33322d;
+  --gray-900: #242420;
 
-  --red-100:    #fee2e2;
-  --red-600:    #dc2626;
-  --yellow-100: #fef9c3;
-  --yellow-600: #ca8a04;
-  --blue-100:   #dbeafe;
-  --blue-700:   #1d4ed8;
-  --pink-100:   #fce7f3;
-  --pink-700:   #be185d;
+  --white: #ffffff;
+
+  /* Warm amber — the single secondary accent, used only for small emphasis
+     moments (custom-item badge, multi-option badge). Never a background fill. */
+  --amber-100: #f3e6ce;
+  --amber-600: #b8763a;
+  --amber-700: #9c6d2c;
+
+  /* Real warning/error surfaces — kept in the same warm family as the rest
+     of the palette but a distinct hue from the amber accent above, so
+     "highlight" and "needs attention" never look like the same signal. */
+  --red-100:    #f5e3df;
+  --red-600:    #b54b3d;
+  --yellow-100: #f6eeda;
+  --yellow-600: #a9791f;
 
   --radius-sm:   6px;
   --radius-md:   8px;
-  --radius-lg:  12px;
-  --radius-xl:  16px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
   --radius-full: 9999px;
 
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.04);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.04);
-  --shadow-lg: 0 10px 24px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04);
+  --shadow-xs: 0 1px 2px rgb(36 36 32 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(36 36 32 / 0.07), 0 1px 2px rgb(36 36 32 / 0.04);
+  --shadow-md: 0 4px 12px rgb(36 36 32 / 0.08), 0 2px 4px rgb(36 36 32 / 0.04);
+  --shadow-lg: 0 10px 24px rgb(36 36 32 / 0.09), 0 4px 8px rgb(36 36 32 / 0.04);
 
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --fast: 120ms;
   --base: 200ms;
   --slow: 300ms;
+
+  /* Spacing scale — base 4px. Used in new/rewritten rules; existing ad hoc
+     px values are migrated opportunistically, not mechanically replaced. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Type scale — replaces 10 ad hoc font-size values. */
+  --text-xs:   0.75rem;    /* 12px — meta, badges */
+  --text-sm:   0.8125rem;  /* 13px — secondary text */
+  --text-base: 0.9375rem;  /* 15px — body default */
+  --text-md:   1.0625rem;  /* 17px — card/section titles */
+  --text-lg:   1.25rem;    /* 20px — section headers */
+  --text-xl:   1.75rem;    /* 28px — plan name / hero title */
 }
 
 /* ===================== */
@@ -109,10 +140,11 @@ code {
   font-weight: 500;
   font-family: inherit;
   line-height: 1;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--fast) var(--ease);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+              color var(--fast) var(--ease), transform var(--fast) var(--ease);
   white-space: nowrap;
 }
 
@@ -122,23 +154,21 @@ code {
   pointer-events: none;
 }
 
+/* Single shared press micro-interaction for every button variant. */
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
 .btn-primary {
   background: var(--green-600);
-  color: #fff;
+  color: var(--white);
   border-color: var(--green-600);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--green-700);
   border-color: var(--green-700);
 }
-.btn-primary:active:not(:disabled) {
-  background: var(--green-700);
-  transform: translateY(1px);
-  box-shadow: none;
-}
 
 .btn-secondary {
-  background: #fff;
+  background: var(--white);
   color: var(--gray-700);
   border-color: var(--gray-200);
   box-shadow: var(--shadow-xs);
@@ -146,10 +176,6 @@ code {
 .btn-secondary:hover:not(:disabled) {
   background: var(--gray-50);
   border-color: var(--gray-300);
-}
-.btn-secondary:active:not(:disabled) {
-  background: var(--gray-100);
-  transform: translateY(1px);
 }
 
 .btn-ghost {
@@ -161,10 +187,6 @@ code {
   background: var(--gray-100);
   color: var(--gray-800);
 }
-.btn-ghost:active:not(:disabled) {
-  background: var(--gray-200);
-  transform: translateY(1px);
-}
 
 .btn-danger-ghost {
   color: var(--red-600);
@@ -174,24 +196,10 @@ code {
   color: var(--red-600);
 }
 
-.btn-outline {
-  background: transparent;
-  color: var(--gray-600);
-  border-color: var(--gray-300);
-}
-.btn-outline:hover:not(:disabled) {
-  background: var(--gray-100);
-}
-
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.8125rem;
   border-radius: 8px;
-}
-
-.btn-lg {
-  padding: 12px 24px;
-  font-size: 0.9375rem;
 }
 
 .btn-full { width: 100%; }
@@ -214,10 +222,11 @@ code {
 .form-group textarea {
   width: 100%;
   padding: 9px 12px;
-  font-size: 0.9375rem;
+  /* 16px minimum — below this, iOS Safari zooms the viewport on focus. */
+  font-size: 1rem;
   font-family: inherit;
   color: var(--gray-900);
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
@@ -228,7 +237,7 @@ code {
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgb(22 163 74 / 0.12);
+  box-shadow: 0 0 0 3px rgb(63 93 76 / 0.14);
 }
 
 .form-group input::placeholder,
@@ -238,7 +247,7 @@ code {
 /* Cards                 */
 /* ===================== */
 .card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -265,7 +274,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, var(--green-50) 0%, #f0fdf4 50%, #ecfdf5 100%);
+  background: linear-gradient(160deg, var(--gray-50) 0%, var(--green-50) 100%);
   padding: 24px 16px;
 }
 
@@ -298,7 +307,7 @@ code {
 }
 
 .auth-form {
-  background: #fff;
+  background: var(--white);
   padding: 32px;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
@@ -343,7 +352,7 @@ code {
   gap: 16px;
   padding: 0 24px;
   height: 60px;
-  background: #fff;
+  background: var(--white);
   border-bottom: 1px solid var(--gray-200);
   position: sticky;
   top: 0;
@@ -410,7 +419,7 @@ code {
 /* Desktop nav tabs */
 .desktop-nav {
   display: none;
-  background: #fff;
+  background: var(--white);
   border-bottom: 1px solid var(--gray-200);
   padding: 0 24px;
 }
@@ -455,7 +464,7 @@ code {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--white);
   border-top: 1px solid var(--gray-200);
   padding: 6px 8px;
   padding-bottom: calc(6px + env(safe-area-inset-bottom));
@@ -535,7 +544,7 @@ code {
 .empty-state-card {
   text-align: center;
   padding: 56px 24px;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-xl);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -580,7 +589,7 @@ code {
   justify-content: space-between;
   gap: 16px;
   padding: 20px 24px;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -618,8 +627,8 @@ code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   background: none;
   border: none;
   border-radius: 6px;
@@ -656,7 +665,7 @@ code {
   border: 1.5px solid var(--green-600);
   border-radius: 8px;
   outline: none;
-  box-shadow: 0 0 0 3px rgb(22 163 74 / 0.12);
+  box-shadow: 0 0 0 3px rgb(63 93 76 / 0.14);
   color: var(--gray-900);
   width: 100%;
 }
@@ -703,7 +712,7 @@ code {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 20px;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -761,7 +770,7 @@ code {
   display: inline-block;
   padding: 2px 10px;
   background: var(--green-600);
-  color: #fff;
+  color: var(--white);
   font-size: 0.6875rem;
   font-weight: 600;
   border-radius: var(--radius-full);
@@ -776,7 +785,7 @@ code {
 
 /* Single day card */
 .diet-day-single {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -798,17 +807,17 @@ code {
   padding: 10px 12px;
 }
 
-/* Meal options group */
+/* Meal options group — uses the warm accent (a feature, not a warning) */
 .meal-options-group {
-  border-left-color: var(--yellow-600);
+  border-left-color: var(--amber-600);
 }
 
 .options-badge {
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 2px 8px;
-  background: var(--yellow-100);
-  color: var(--yellow-600);
+  background: var(--amber-100);
+  color: var(--amber-700);
   border-radius: var(--radius-full);
 }
 
@@ -853,7 +862,7 @@ code {
 
 .diet-meal {
   padding: 12px 14px;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-md);
   border: 1px solid var(--gray-100);
   border-left: 3px solid var(--green-500);
@@ -872,24 +881,25 @@ code {
   cursor: default;
 }
 
-.meal-header { margin-bottom: 2px; }
-
+/* Meal type is now carried by icon + label on a single neutral badge —
+   the 4-color rainbow badge (green/blue/yellow/pink) was the single biggest
+   contributor to the "generic wellness app" look. Color is reserved for
+   state/action now, not category. */
 .meal-type {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  color: var(--gray-600);
 }
 
-.meal-type.breakfast { background: var(--green-100); color: var(--green-700); }
-.meal-type.lunch     { background: var(--blue-100);  color: var(--blue-700);  }
-.meal-type.dinner    { background: var(--yellow-100); color: var(--yellow-600); }
-.meal-type.snack     { background: var(--pink-100);  color: var(--pink-700);  }
+.meal-type svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 .meal-name {
   font-size: 0.8125rem;
@@ -926,7 +936,7 @@ code {
   font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
-  background: #fff;
+  background: var(--white);
   color: var(--gray-600);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-full);
@@ -938,12 +948,12 @@ code {
 
 .filter-btn.active {
   background: var(--green-600);
-  color: #fff;
+  color: var(--white);
   border-color: var(--green-600);
 }
 
 .shopping-list {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
@@ -1013,7 +1023,9 @@ code {
   border-radius: var(--radius-full);
 }
 
-.item-badge.custom { background: var(--blue-100); color: var(--blue-700); }
+/* custom = added manually by the user (warm accent); auto = generated from
+   the plan (forest accent) — the same two-accent language used everywhere else. */
+.item-badge.custom { background: var(--amber-100); color: var(--amber-700); }
 .item-badge.auto   { background: var(--green-100); color: var(--green-700); }
 
 .item-delete-btn {
@@ -1100,7 +1112,7 @@ code {
 }
 
 .substitute-card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   padding: 18px;
   border: 1px solid var(--gray-200);
@@ -1142,7 +1154,10 @@ code {
   gap: 16px;
 }
 
-.form-group textarea {
+/* Scoped to the raw-paste textarea only — this used to be ".form-group
+   textarea" and leaked a monospace font into every other textarea in the
+   app (e.g. the plain-language meal description field). */
+#diet-text {
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
   font-size: 0.8125rem;
   line-height: 1.65;
@@ -1251,18 +1266,6 @@ code {
   margin-bottom: 3px;
 }
 
-.help-example {
-  padding: 12px;
-  background: #fff;
-  border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
-  color: var(--gray-600);
-  white-space: pre-line;
-  border: 1px solid var(--gray-200);
-  line-height: 1.8;
-  margin-bottom: 0 !important;
-}
-
 .import-actions {
   display: flex;
   gap: 8px;
@@ -1298,10 +1301,13 @@ code {
   color: var(--gray-400);
   margin-top: 2px;
 }
-.file-input-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+/* Specificity raised to unambiguously beat ".form-group input { width: 100% }"
+   — this input lives inside a .form-group and was winning that fight, which
+   made the "hidden" file input render at full width and overflow the page. */
+.form-group input.file-input-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
   opacity: 0;
   pointer-events: none;
 }
@@ -1352,7 +1358,7 @@ code {
 .count-badge {
   padding: 3px 10px;
   background: var(--green-600);
-  color: #fff;
+  color: var(--white);
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: var(--radius-full);
@@ -1362,71 +1368,6 @@ code {
   max-height: 400px;
   overflow-y: auto;
   padding: 16px;
-}
-
-.preview-day { margin-bottom: 16px; }
-.preview-day:last-child { margin-bottom: 0; }
-
-.preview-day-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--gray-100);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-}
-
-.preview-day-header h4 {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  margin: 0;
-  text-transform: capitalize;
-  color: var(--gray-700);
-}
-
-.preview-day-count {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-}
-
-.preview-meals {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-left: 12px;
-}
-
-.preview-meal {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
-  border-left: 3px solid var(--green-400);
-}
-
-.preview-meal-type {
-  padding: 2px 7px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-radius: var(--radius-sm);
-  min-width: 72px;
-  text-align: center;
-}
-
-.preview-meal-type.breakfast { background: var(--green-100);  color: var(--green-700); }
-.preview-meal-type.lunch     { background: var(--blue-100);   color: var(--blue-700);  }
-.preview-meal-type.dinner    { background: var(--yellow-100); color: var(--yellow-600); }
-.preview-meal-type.snack     { background: var(--pink-100);   color: var(--pink-700);  }
-
-.preview-meal-name {
-  flex: 1;
-  font-size: 0.875rem;
-  color: var(--gray-700);
 }
 
 .preview-actions {
@@ -1472,7 +1413,7 @@ code {
   gap: 6px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--yellow-100);
-  background: #fffbeb;
+  background: var(--yellow-100);
 }
 
 .preview-warning {
@@ -1521,6 +1462,26 @@ code {
   align-items: start;
 }
 
+/* Same neutral+icon treatment as .meal-type — no per-type color. */
+.preview-meal-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 2px 7px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-sm);
+  min-width: 72px;
+  text-align: center;
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.preview-meal-type svg { width: 12px; height: 12px; flex-shrink: 0; }
+
 .preview-meal-detail {
   min-width: 0;
 }
@@ -1556,11 +1517,11 @@ code {
   cursor: wait;
 }
 
-/* Language badge */
+/* Language badge — informational, not actionable, so it stays neutral. */
 .lang-badge {
   padding: 3px 10px;
-  background: var(--blue-100);
-  color: var(--blue-700);
+  background: var(--gray-100);
+  color: var(--gray-600);
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: var(--radius-full);
@@ -1569,7 +1530,7 @@ code {
 
 /* Parse log */
 .parse-log {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
   overflow: hidden;
@@ -1637,7 +1598,7 @@ code {
   justify-content: center;
   gap: 12px;
   padding: 40px 24px;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-lg);
   border: 1px dashed var(--gray-200);
   text-align: center;
@@ -1675,7 +1636,7 @@ code {
 
 .modal-content {
   position: relative;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 520px;
@@ -1738,7 +1699,7 @@ code {
 .toast {
   padding: 10px 18px;
   background: var(--gray-900);
-  color: #fff;
+  color: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   font-size: 0.875rem;
@@ -1770,14 +1731,34 @@ code {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Inline loading spinner for buttons — pairs with disabled + staged text
+   during slow operations (diet parsing, shopping list generation). */
+.btn-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn-secondary .btn-spinner,
+.btn-ghost .btn-spinner {
+  border-color: rgb(63 93 76 / 0.25);
+  border-top-color: currentColor;
+}
+
 /* ===================== */
 /* Responsive            */
 /* ===================== */
 @media (min-width: 769px) {
   .desktop-nav { display: block; }
-}
-
-@media (max-width: 1200px) {
 }
 
 @media (max-width: 900px) {
@@ -1826,6 +1807,8 @@ code {
   .import-actions .btn { width: 100%; }
   /* Always show meal action buttons on touch screens */
   .meal-actions { opacity: 1; }
+  .form-row { grid-template-columns: 1fr; }
+  .confirm-stack .btn { font-size: 0.875rem; }
 }
 
 /* ===================== */
@@ -1853,8 +1836,11 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  /* Enlarged from 22px toward the 44px touch-target guideline; kept at 36px
+     (rather than the full 44px) so two buttons side by side don't crowd the
+     meal-header row on narrow screens. */
+  width: 36px;
+  height: 36px;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -1931,7 +1917,7 @@ code {
 
 .btn-primary .btn-hint {
   background: rgb(255 255 255 / 0.2);
-  color: rgba(255,255,255,0.85);
+  color: rgb(255 255 255 / 0.85);
 }
 
 /* Form helpers */
@@ -1945,9 +1931,4 @@ code {
   font-weight: 400;
   color: var(--gray-400);
   font-size: 0.75rem;
-}
-
-@media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
-  .confirm-stack .btn { font-size: 0.875rem; }
 }

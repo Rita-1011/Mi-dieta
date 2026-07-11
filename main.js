@@ -1,16 +1,7 @@
 import './style.css';
 import { createClient } from '@supabase/supabase-js';
 import {
-  COOKING_METHOD_PATTERNS,
-  PROTECTED_PRODUCTS,
-  RECIPE_EXPANSIONS,
-  RECIPE_PREFIXES,
-  capitalize,
   normalizeIngredientKey,
-  stripCookingMethod,
-  extractQtyAndName,
-  extractShoppingIngredients,
-  mergeShoppingIngredients,
   collectShoppingIngredients,
   applyNormalizationRenames,
 } from './src/shopping-pipeline.js';
@@ -41,6 +32,39 @@ let planDocument = null;
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+// =====================
+// Sistema de iconografía propio
+// =====================
+// Un único lenguaje visual para toda la app: trazo 1.6px, sin relleno,
+// terminaciones y uniones redondeadas, grid 20x20. Sustituye tanto los emoji
+// de tipo de comida como los SVGs de relleno genéricos (estilo icon-pack)
+// que había en index.html.
+const ICON_PATHS = {
+  edit: '<path d="M12.9 3.3a1.5 1.5 0 0 1 2.1 0l1.7 1.7a1.5 1.5 0 0 1 0 2.1L7.4 16.4l-4 .8.8-4L12.9 3.3Z"/><path d="M11.3 4.9l3.8 3.8"/>',
+  delete: '<path d="M4 6h12"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6"/><path d="M5.5 6l.6 9.5A1.5 1.5 0 0 0 7.6 17h4.8a1.5 1.5 0 0 0 1.5-1.4L14.5 6"/><path d="M8.5 9v5M11.5 9v5"/>',
+  chevronLeft: '<path d="M12 5l-5 5 5 5"/>',
+  chevronRight: '<path d="M8 5l5 5-5 5"/>',
+  chevronDown: '<path d="M5 8l5 5 5-5"/>',
+  breakfast: '<path d="M3 14h14"/><path d="M6 14a4 4 0 0 1 8 0"/><path d="M10 7V5M5.5 9.5l-1-1M14.5 9.5l1-1"/>',
+  lunch: '<circle cx="10" cy="10" r="3.25"/><path d="M10 4.5v1.5M10 14v1.5M4.5 10h1.5M14 10h1.5"/>',
+  dinner: '<path d="M13.5 4.3A6.5 6.5 0 1 0 15.7 15a5.2 5.2 0 0 1-2.2-10.7Z"/>',
+  snack: '<path d="M5 14c0-5 3-9 9-9 0 6-3 9-9 9Z"/><path d="M6 14c2-3 4-5 8-8"/>',
+  basket: '<path d="M5 7h10l-.8 8.2A1.5 1.5 0 0 1 12.7 16.5H7.3a1.5 1.5 0 0 1-1.5-1.3L5 7Z"/><path d="M7.5 7V6a2.5 2.5 0 0 1 5 0v1"/>',
+  importDoc: '<path d="M6 3.5h5.5L15 7v9.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z"/><path d="M11 3.5V7h4"/><path d="M10 14.5V9.5M7.8 11.7 10 9.5l2.2 2.2"/>',
+  originalDoc: '<path d="M6 3.5h5.5L15 7v9.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z"/><path d="M11 3.5V7h4"/><path d="M7.5 10.5h5M7.5 13h3.5"/>',
+  calendar: '<rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M7 3v3M13 3v3M3.5 8.5h13"/>',
+  assistant: '<path d="M6 4.5h8A2.5 2.5 0 0 1 16.5 7v3A2.5 2.5 0 0 1 14 12.5h-1l-2.3 2.3V12.5H6A2.5 2.5 0 0 1 3.5 10V7A2.5 2.5 0 0 1 6 4.5Z"/><path d="M7 8h6M7 10h4"/>',
+  info: '<circle cx="10" cy="10" r="7"/><path d="M10 9.3v4.2"/><path d="M10 6.6v.1" stroke-width="2.6"/>',
+  clipboard: '<path d="M7.5 4h5a1 1 0 0 1 1 1 1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1 1 1 0 0 1 1-1Z"/><path d="M6 4.2A2 2 0 0 0 4.5 6.2v9.3A1.5 1.5 0 0 0 6 17h8a1.5 1.5 0 0 0 1.5-1.5V6.2A2 2 0 0 0 14 4.2"/>',
+  warning: '<path d="M10 3.5 17 15.5H3L10 3.5Z"/><path d="M10 8.3v3.3"/><path d="M10 13.9v.1" stroke-width="2.4"/>',
+};
+
+function icon(name, size = 16, extraClass = '') {
+  const inner = ICON_PATHS[name] || '';
+  const cls = extraClass ? ` class="${extraClass}"` : '';
+  return `<svg${cls} width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+}
 
 // Aplicación en español - el idioma de la UI siempre es español
 let currentLanguage = 'es';
@@ -668,6 +692,21 @@ function updateDietView() {
   const dietView   = $('#diet-view');
   const container  = $('#diet-days-grid');
 
+  // Navbar plan context — visible from every section (Import/Compra/Asistente
+  // included), independent of whether the Diet section has meals to show yet.
+  const planPeriodEl = $('#plan-period');
+  if (planPeriodEl) {
+    if (planDocument) {
+      const name = planDocument.plan_name || 'Mi Plan';
+      const date = planDocument.created_at
+        ? new Date(planDocument.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+        : null;
+      planPeriodEl.textContent = date ? `${name} · ${date}` : name;
+    } else {
+      planPeriodEl.textContent = 'Sin plan activo';
+    }
+  }
+
   if (meals.length === 0) {
     emptyState.classList.remove('hidden');
     dietView.classList.add('hidden');
@@ -735,7 +774,12 @@ function updateDietView() {
     if (mealsByDay[meal.day_of_week]) mealsByDay[meal.day_of_week].push(meal);
   });
 
-  const mealIcons  = { breakfast: '🌅', lunch: '🌞', dinner: '🌙', snack: '🥑' };
+  const mealIcons  = {
+    breakfast: icon('breakfast', 12),
+    lunch: icon('lunch', 12),
+    dinner: icon('dinner', 12),
+    snack: icon('snack', 12),
+  };
   const emptyTexts = {
     es: 'Sin comidas planificadas',
     en: 'No meals planned',
@@ -758,10 +802,10 @@ function updateDietView() {
   const prevIdx    = (currentViewDayIndex - 1 + 7) % 7;
   const nextIdx    = (currentViewDayIndex + 1) % 7;
 
-  const EDIT_ICON   = `<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>`;
-  const DELETE_ICON = `<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
-  const PREV_ICON   = `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`;
-  const NEXT_ICON   = `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>`;
+  const EDIT_ICON   = icon('edit', 14);
+  const DELETE_ICON = icon('delete', 14);
+  const PREV_ICON   = icon('chevronLeft', 16);
+  const NEXT_ICON   = icon('chevronRight', 16);
 
   function renderIngredients(meal) {
     if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
@@ -844,14 +888,6 @@ function updateDietView() {
 }
 
 // =====================
-// Modal de Comida
-// =====================
-// Gestión manual de comidas eliminada - la aplicación es un organizador de dieta, no un rastreador de comidas
-function setupMealModal() {
-  // No-op: la edición manual de comidas no está soportada
-}
-
-// =====================
 // Lista de la Compra
 // =====================
 function renderShoppingList(filter = 'all') {
@@ -885,10 +921,7 @@ function renderShoppingList(filter = 'all') {
         </div>
       </div>
       <button class="item-delete-btn" onclick="window.deleteShoppingItem('${item.id}')" title="Eliminar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        </svg>
+        ${icon('delete', 16)}
       </button>
     </div>
   `).join('');
@@ -904,7 +937,19 @@ function setupShoppingList() {
     });
   });
 
-  $('#generate-list-btn').addEventListener('click', generateShoppingList);
+  const generateBtn = $('#generate-list-btn');
+  const generateBtnLabel = generateBtn.textContent;
+  generateBtn.addEventListener('click', async () => {
+    if (generateBtn.disabled) return; // guard against duplicate/overlapping runs
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = `<span class="btn-spinner"></span>🛒 Generando lista…`;
+    try {
+      await generateShoppingList();
+    } finally {
+      generateBtn.innerHTML = generateBtnLabel;
+      generateBtn.disabled = false;
+    }
+  });
   $('#clear-list-btn').addEventListener('click', clearGeneratedShoppingItems);
   $('#add-item-btn').addEventListener('click', () => {
     $('#item-modal').classList.remove('hidden');
@@ -941,12 +986,10 @@ function setupShoppingList() {
 // =====================
 // Extracción de ingredientes para la lista de la compra
 // =====================
-// All pure pipeline functions are imported from src/shopping-pipeline.js.
-// The constants and functions (COOKING_METHOD_PATTERNS, PROTECTED_PRODUCTS,
-// RECIPE_EXPANSIONS, RECIPE_PREFIXES, capitalize, normalizeIngredientKey,
-// stripCookingMethod, extractQtyAndName, extractShoppingIngredients,
-// mergeShoppingIngredients, collectShoppingIngredients, applyNormalizationRenames)
-// are defined there and re-used here and in the test suite.
+// The pipeline's pure functions (ingredient extraction, cooking-method
+// stripping, recipe expansion, etc.) live in src/shopping-pipeline.js and
+// are covered by the test suite there. Only the pieces actually called
+// from this file are imported above.
 
 
 async function clearGeneratedShoppingItems() {
@@ -1739,7 +1782,7 @@ function renderPreview(plan) {
   if (plan.warnings?.length) {
     html += `<div class="preview-warnings">`;
     plan.warnings.forEach(w => {
-      html += `<div class="preview-warning"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>${w}</div>`;
+      html += `<div class="preview-warning">${icon('warning', 14)}${w}</div>`;
     });
     html += `</div>`;
   }
@@ -1755,7 +1798,7 @@ function renderPreview(plan) {
       const cls = MEAL_CLASS[meal.type] || 'snack';
       const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients : [];
       html += `<div class="preview-meal-entry">`;
-      html += `<span class="preview-meal-type ${cls}">${label}</span>`;
+      html += `<span class="preview-meal-type">${icon(cls, 12)}${label}</span>`;
       html += `<div class="preview-meal-detail">`;
       if (ingredients.length > 0) {
         html += `<ul class="preview-ingredients">`;
@@ -1955,7 +1998,13 @@ function setupImport() {
     if (source === 'text') renderParseLog();
   }
 
+  // Staged, descriptive feedback while diet-parser (Gemini) does its work —
+  // purely cosmetic, no real progress percentage is known.
+  const PARSE_STAGES = ['📄 Leyendo documento…', '🤖 Analizando con IA…', '🥗 Organizando comidas…'];
+
   parseBtn.addEventListener('click', async () => {
+    if (parseBtn.disabled) return; // guard against duplicate/overlapping runs
+
     const text = dietText.value.trim();
 
     if (!selectedFile && !text) {
@@ -1964,9 +2013,19 @@ function setupImport() {
     }
 
     parseBtn.disabled = true;
-    parseBtn.innerHTML = 'Analizando con IA…';
     parseLog.length = 0;
 
+    let stageIndex = 0;
+    const setStage = () => {
+      parseBtn.innerHTML = `<span class="btn-spinner"></span>${PARSE_STAGES[stageIndex]}`;
+    };
+    setStage();
+    const stageInterval = setInterval(() => {
+      stageIndex = (stageIndex + 1) % PARSE_STAGES.length;
+      setStage();
+    }, 2200);
+
+    let succeeded = false;
     try {
       let payload;
 
@@ -1979,6 +2038,7 @@ function setupImport() {
 
       const result = await callDietParser(payload);
       applyParsedMeals(result.meals, result.language, 'ai');
+      succeeded = true;
     } catch (aiErr) {
       console.warn('Diet-parser edge function failed:', aiErr.message);
 
@@ -1987,14 +2047,20 @@ function setupImport() {
         showToast('Servicio IA no disponible — usando el analizador de texto', 'warning');
         const fallbackMeals = parseDietPlan(text);
         applyParsedMeals(fallbackMeals, currentLanguage, 'text');
+        succeeded = true;
       } else {
         showToast(`Error al analizar: ${aiErr.message}`, 'error');
         importBtn.disabled = true;
         importShoppingBtn.disabled = true;
       }
     } finally {
-      parseBtn.disabled = false;
+      clearInterval(stageInterval);
+      if (succeeded) {
+        parseBtn.innerHTML = '✅ Plan analizado';
+        await new Promise(resolve => setTimeout(resolve, 700));
+      }
       parseBtn.innerHTML = 'Analizar plan';
+      parseBtn.disabled = false;
     }
   });
 
