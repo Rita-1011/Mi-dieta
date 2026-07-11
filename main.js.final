@@ -1,0 +1,31 @@
+  const lang          = getLanguage();
+  const dayLabels     = DAY_LABELS[lang]     || DAY_LABELS.en;
+  const mealTypeLabels = MEAL_TYPE_LABELS[lang] || MEAL_TYPE_LABELS.en;
+
+  // Plan name: only update when the user is not currently editing it
+  const planNameEl = $('#diet-view-name');
+  const nameRow    = $('#plan-name-row');
+  if (planNameEl && !nameRow?.classList.contains('hidden')) {
+    planNameEl.textContent = planDocument?.plan_name || 'Mi Plan';
+  }
+
+  // Import date instead of meal count
+  const metaEl = $('#diet-view-meta');
+  if (metaEl) {
+    if (planDocument?.created_at) {
+      const importDate = new Date(planDocument.created_at);
+      const formatted = importDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      const importLabels = {
+        es: `Importado el ${formatted}`,
+        en: `Imported on ${importDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        pt: `Importado em ${importDate.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        fr: `Importé le ${importDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        de: `Importiert am ${importDate.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        it: `Importato il ${importDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        nl: `Geïmporteerd op ${importDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      };
+      metaEl.textContent = importLabels[lang] || importLabels.es;
+    } else {
+      metaEl.textContent = '';
+    }
+  }
