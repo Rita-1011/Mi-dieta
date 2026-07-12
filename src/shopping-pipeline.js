@@ -178,26 +178,29 @@ export function extractShoppingIngredients(raw) {
   for (const prefix of RECIPE_PREFIXES) {
     if (lowerName.startsWith(prefix)) {
       const remainder = nameStr.slice(prefix.length).trim();
-      const parts = remainder.split(/\s+(?:con|y)\s+/i)
+      const parts = remainder.split(/\s*,\s*|\s+(?:con|y)\s+/i)
         .map(p => stripCookingMethod(p.trim()))
         .filter(Boolean);
       if (parts.length > 0) return parts.map(p => ({ name: capitalize(p), qty: null }));
     }
   }
 
-  if (/\s+con\s+/i.test(nameStr)) {
+  // Split on "con", bare "y", and commas — a raw ingredient line may list
+  // several components with any of these connectors, with or without "con"
+  // (e.g. "orégano y ajito", "sal, pimienta y orégano").
+  if (/\s+con\s+/i.test(nameStr) || /\s+y\s+/i.test(nameStr) || /,/.test(nameStr)) {
     const conParts = nameStr.split(/\s+con\s+/i);
-    if (conParts.length > 1) {
-      const result = [];
-      for (const cp of conParts) {
-        // Each part produced by "con" may itself be "X y Y" — split further
-        // so compound right-hand expressions yield individual ingredients.
-        for (const yp of cp.split(/\s+y\s+/i)) {
-          const cleaned = stripCookingMethod(yp.trim());
-          if (cleaned) result.push({ name: capitalize(cleaned), qty: null });
-        }
+    const result = [];
+    for (const cp of conParts) {
+      // Each part (or the whole string, when there was no "con") may itself
+      // be "X, Y y Z" — split further so every component becomes its own entry.
+      for (const yp of cp.split(/\s*,\s*|\s+y\s+/i)) {
+        const cleaned = stripCookingMethod(yp.trim());
+        if (cleaned) result.push(cleaned);
       }
-      return result;
+    }
+    if (result.length > 1) {
+      return result.map(p => ({ name: capitalize(p), qty: null }));
     }
   }
 

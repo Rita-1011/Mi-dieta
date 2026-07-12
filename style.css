@@ -1083,7 +1083,12 @@ code {
   gap: 8px;
 }
 
-.search-box input { flex: 1; }
+.search-box input {
+  flex: 1;
+  /* 16px minimum — below this, iOS Safari zooms the viewport on focus.
+     Matches the same fix already applied to every .form-group input. */
+  font-size: 1rem;
+}
 
 .quick-suggestions {
   display: flex;
