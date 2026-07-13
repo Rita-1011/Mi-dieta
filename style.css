@@ -700,6 +700,11 @@ code {
     flex-direction: column;
     gap: 14px;
   }
+  .plan-header-main {
+    /* flex-basis 200px is a row-layout width hint; in column direction it
+       becomes a height basis and forces ~200px of empty vertical space. */
+    flex: 1 1 auto;
+  }
   .plan-header-actions {
     width: 100%;
   }
