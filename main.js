@@ -339,6 +339,8 @@ async function initAuth() {
   if (session?.user) {
     currentUser = session.user;
     showMainApp();
+  } else {
+    showAuthModal();
   }
 
   supabase.auth.onAuthStateChange((event, session) => {
